@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+
+    <application
+            android:label="SpeedoMate"
+            android:icon="@mipmap/ic_launcher"
+            android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+
+        <!-- Phone UI -->
+        <activity android:name=".ui.MainActivity"
+                  android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN"/>
+                <category android:name="android.intent.category.LAUNCHER"/>
+            </intent-filter>
+        </activity>
+
+        <activity android:name=".ui.SettingsActivity"/>
+
+        <!-- Background GPS service -->
+        <service
+                android:name=".service.SpeedTrackingService"
+                android:foregroundServiceType="location"
+                android:exported="false"/>
+
+        <!-- ✅ Android Auto CarAppService — THIS IS THE KEY ENTRY POINT -->
+        <service
+                android:name=".service.SpeedAutoService"
+                android:exported="true">
+            <intent-filter>
+                <action android:name="androidx.car.app.CarAppService"/>
+                <category android:name="androidx.car.app.category.POI"/>
+            </intent-filter>
+        </service>
+
+        <!-- Declares this app supports Android Auto -->
+        <meta-data
+                android:name="com.google.android.gms.car.application"
+                android:resource="@xml/automotive_app_desc"/>
+
+    </application>
+</manifest>
