@@ -1,4 +1,3 @@
-// ui/SpeedViewModel.kt
 package com.speedomate.ui
 
 import android.app.Application
@@ -46,8 +45,9 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
         getApplication<Application>().startForegroundService(intent)
     }
 
+    // Updated to pass prefs and scope
     fun resetTrip() {
-        SpeedTrackingService.resetTrip()
+        SpeedTrackingService.resetTrip(prefs, viewModelScope)
     }
 
     fun setMetric(value: Boolean) {

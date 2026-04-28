@@ -85,7 +85,7 @@ class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) 
         val resetAction = Action.Builder()
             .setTitle("Reset Trip")
             .setOnClickListener {
-                SpeedTrackingService.resetTrip()
+                SpeedTrackingService.resetTrip(prefs, scope)
                 invalidate()
             }
             .build()

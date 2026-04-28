@@ -1,17 +1,20 @@
-// service/SpeedTrackingService.kt
 package com.speedomate.service
 
 import android.app.*
 import android.content.Intent
 import androidx.lifecycle.LifecycleService
+import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.*
+import com.speedomate.data.PrefsManager
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 
 class SpeedTrackingService : LifecycleService() {
 
     companion object {
-        // Shared state — both phone UI and Auto screen read from here
         private val _speedMs = MutableStateFlow(0f)
         val speedMs: StateFlow<Float> = _speedMs
 
@@ -24,26 +27,41 @@ class SpeedTrackingService : LifecycleService() {
         private val _tripDistance = MutableStateFlow(0.0)
         val tripDistance: StateFlow<Double> = _tripDistance
 
-        fun resetTrip() {
-            _maxSpeed.value = 0f
-            _avgSpeed.value = 0f
-            _tripDistance.value = 0.0
-            speedReadings.clear()
-            lastLocation = null
-        }
-
-        private val speedReadings = mutableListOf<Float>()
+        var speedSum = 0f
+        var speedCount = 0f
         var lastLocation: android.location.Location? = null
+
+        fun resetTrip(prefs: PrefsManager, scope: CoroutineScope) {
+            _maxSpeed.value    = 0f
+            _avgSpeed.value    = 0f
+            _tripDistance.value = 0.0
+            speedSum           = 0f
+            speedCount         = 0f
+            lastLocation       = null
+            scope.launch { prefs.resetTripData() }
+        }
     }
 
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private lateinit var locationCallback: LocationCallback
+    private lateinit var prefs: PrefsManager
 
     override fun onCreate() {
         super.onCreate()
-        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        prefs = PrefsManager(this)
         startForeground(1, buildNotification())
-        startLocationUpdates()
+
+        // Restore saved trip data before starting GPS
+        lifecycleScope.launch {
+            _tripDistance.value = prefs.savedTripDistance.first()
+            _maxSpeed.value     = prefs.savedMaxSpeed.first()
+            speedSum            = prefs.savedSpeedSum.first()
+            speedCount          = prefs.savedSpeedCount.first()
+            if (speedCount > 0f) {
+                _avgSpeed.value = speedSum / speedCount
+            }
+            startLocationUpdates()
+        }
     }
 
     private fun startLocationUpdates() {
@@ -51,41 +69,52 @@ class SpeedTrackingService : LifecycleService() {
             Priority.PRIORITY_HIGH_ACCURACY, 500L
         )
             .setMinUpdateIntervalMillis(500L)
-            .setMaxUpdateDelayMillis(500L)  // ← add this line
+            .setMaxUpdateDelayMillis(500L)
             .build()
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
                 val location = result.lastLocation ?: return
-
-                // Speed from GPS (m/s) — same method Google Maps uses
                 val speed = if (location.hasSpeed()) location.speed else 0f
                 _speedMs.value = speed
 
-                // Update max speed
                 if (speed > _maxSpeed.value) _maxSpeed.value = speed
 
-                // Update trip distance (Haversine via Android Location API)
                 lastLocation?.let { prev ->
-                    val dist = prev.distanceTo(location) / 1000.0 // km
+                    val dist = prev.distanceTo(location) / 1000.0
                     _tripDistance.value += dist
                 }
                 lastLocation = location
 
-                // Rolling average speed
-                speedReadings.add(speed)
-                _avgSpeed.value = speedReadings.average().toFloat()
+                speedSum += speed
+                speedCount++
+                _avgSpeed.value = speedSum / speedCount
+
+                // Persist to DataStore on every update
+                lifecycleScope.launch {
+                    prefs.saveTripData(
+                        _tripDistance.value,
+                        _maxSpeed.value,
+                        speedSum,
+                        speedCount
+                    )
+                }
             }
         }
 
-        fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        fusedLocationClient.requestLocationUpdates(
+            request, locationCallback, mainLooper
+        )
     }
 
     private fun buildNotification(): Notification {
         val channel = NotificationChannel(
-            "speed_channel", "Speed Tracking", NotificationManager.IMPORTANCE_LOW
+            "speed_channel", "Speed Tracking",
+            NotificationManager.IMPORTANCE_LOW
         )
-        getSystemService(NotificationManager::class.java).createNotificationChannel(channel)
+        getSystemService(NotificationManager::class.java)
+            .createNotificationChannel(channel)
 
         return Notification.Builder(this, "speed_channel")
             .setContentTitle("SpeedoMate Active")
@@ -96,8 +125,8 @@ class SpeedTrackingService : LifecycleService() {
 
     override fun onDestroy() {
         super.onDestroy()
-        fusedLocationClient.removeLocationUpdates(locationCallback)
+        if (::locationCallback.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+        }
     }
-
-    override fun onBind(intent: Intent) = super.onBind(intent)
 }
