@@ -12,6 +12,10 @@
             android:icon="@mipmap/ic_launcher"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
+        <meta-data
+                android:name="androidx.car.app.minCarApiLevel"
+                android:value="1"/>
+
         <!-- Phone UI -->
         <activity android:name=".ui.MainActivity"
                   android:exported="true">
