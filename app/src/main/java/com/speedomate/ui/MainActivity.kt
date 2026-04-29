@@ -1,4 +1,3 @@
-// ui/MainActivity.kt
 package com.speedomate.ui
 
 import android.Manifest
@@ -51,23 +50,35 @@ class MainActivity : AppCompatActivity() {
 
     private fun observeSpeed() {
         lifecycleScope.launch {
-            vm.currentSpeed.collectLatest { speed ->
-                binding.tvSpeed.text = "%.0f".format(speed)
+            vm.isMetric.collectLatest { metric ->
+                val speedUnit = if (metric) "km/h" else "mph"
+                val distUnit  = if (metric) "km" else "mi"
+                binding.speedometerView.unit = speedUnit
+                binding.tvMaxUnit.text  = speedUnit
+                binding.tvAvgUnit.text  = speedUnit
+                binding.tvTripUnit.text = distUnit
+                // Adjust dial max based on unit
+                binding.speedometerView.setMaxDisplaySpeed(if (metric) 180f else 120f)
             }
         }
         lifecycleScope.launch {
-            vm.maxSpeed.collectLatest { binding.tvMaxSpeed.text = "Max: ${"%.0f".format(it)}" }
+            vm.currentSpeed.collectLatest { speed ->
+                binding.speedometerView.setSpeed(speed)
+            }
         }
         lifecycleScope.launch {
-            vm.avgSpeed.collectLatest { binding.tvAvgSpeed.text = "Avg: ${"%.0f".format(it)}" }
+            vm.maxSpeed.collectLatest { speed ->
+                binding.tvMaxSpeed.text = "%.0f".format(speed)
+            }
         }
         lifecycleScope.launch {
-            vm.tripDistance.collectLatest { binding.tvTrip.text = "Trip: ${"%.2f".format(it)}" }
+            vm.avgSpeed.collectLatest { speed ->
+                binding.tvAvgSpeed.text = "%.0f".format(speed)
+            }
         }
         lifecycleScope.launch {
-            vm.isMetric.collectLatest { metric ->
-                binding.tvUnit.text = if (metric) "km/h" else "mph"
-                binding.tvTripUnit.text = if (metric) "km" else "mi"
+            vm.tripDistance.collectLatest { dist ->
+                binding.tvTrip.text = "%.2f".format(dist)
             }
         }
     }

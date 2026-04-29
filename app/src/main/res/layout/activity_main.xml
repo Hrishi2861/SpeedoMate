@@ -4,118 +4,202 @@
         xmlns:app="http://schemas.android.com/apk/res-auto"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#0D0D0D">
+        android:background="#0A0A0A">
 
-    <TextView
-            android:id="@+id/tvSpeed"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="0"
-            android:textSize="120sp"
-            android:textColor="#00E5FF"
-            android:fontFamily="sans-serif-thin"
+    <!-- Analog + Digital Speedometer -->
+    <com.speedomate.ui.SpeedometerView
+            android:id="@+id/speedometerView"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:layout_margin="16dp"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintVertical_bias="0.0"
+            app:layout_constraintBottom_toTopOf="@id/statsCard"/>
+
+    <!-- Stats Card -->
+    <androidx.cardview.widget.CardView
+            android:id="@+id/statsCard"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="8dp"
+            app:cardBackgroundColor="#111111"
+            app:cardCornerRadius="16dp"
+            app:cardElevation="0dp"
+            app:layout_constraintBottom_toTopOf="@id/btnRow"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent">
+
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+            <!-- Max / Avg row -->
+            <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal">
+
+                <!-- Max Speed -->
+                <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="MAX"
+                            android:textSize="10sp"
+                            android:textColor="#555555"
+                            android:letterSpacing="0.2"/>
+
+                    <TextView
+                            android:id="@+id/tvMaxSpeed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="28sp"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="monospace"/>
+
+                    <TextView
+                            android:id="@+id/tvMaxUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km/h"
+                            android:textSize="11sp"
+                            android:textColor="#00E5FF"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#222222"/>
+
+                <!-- Avg Speed -->
+                <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="AVG"
+                            android:textSize="10sp"
+                            android:textColor="#555555"
+                            android:letterSpacing="0.2"/>
+
+                    <TextView
+                            android:id="@+id/tvAvgSpeed"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0"
+                            android:textSize="28sp"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="monospace"/>
+
+                    <TextView
+                            android:id="@+id/tvAvgUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km/h"
+                            android:textSize="11sp"
+                            android:textColor="#00E5FF"/>
+                </LinearLayout>
+
+                <!-- Divider -->
+                <View
+                        android:layout_width="1dp"
+                        android:layout_height="match_parent"
+                        android:background="#222222"/>
+
+                <!-- Trip -->
+                <LinearLayout
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:orientation="vertical"
+                        android:gravity="center">
+
+                    <TextView
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="TRIP"
+                            android:textSize="10sp"
+                            android:textColor="#555555"
+                            android:letterSpacing="0.2"/>
+
+                    <TextView
+                            android:id="@+id/tvTrip"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="0.00"
+                            android:textSize="28sp"
+                            android:textColor="#FFFFFF"
+                            android:fontFamily="monospace"/>
+
+                    <TextView
+                            android:id="@+id/tvTripUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km"
+                            android:textSize="11sp"
+                            android:textColor="#00E5FF"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+    </androidx.cardview.widget.CardView>
+
+    <!-- Button Row -->
+    <LinearLayout
+            android:id="@+id/btnRow"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:layout_marginStart="16dp"
+            android:layout_marginEnd="16dp"
+            android:layout_marginBottom="16dp"
             app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintVertical_bias="0.25"/>
-
-    <TextView
-            android:id="@+id/tvUnit"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="km/h"
-            android:textSize="24sp"
-            android:textColor="#888888"
-            android:layout_marginTop="8dp"
-            app:layout_constraintTop_toBottomOf="@id/tvSpeed"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-    <LinearLayout
-            android:id="@+id/statsRow"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:gravity="center"
-            android:padding="24dp"
-            android:layout_marginTop="32dp"
-            app:layout_constraintTop_toBottomOf="@id/tvUnit"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-        <TextView
-                android:id="@+id/tvMaxSpeed"
+        <Button
+                android:id="@+id/btnResetTrip"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Max: 0"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:gravity="center"/>
+                android:layout_marginEnd="8dp"
+                android:text="RESET TRIP"
+                android:textSize="12sp"
+                android:letterSpacing="0.1"
+                android:backgroundTint="#111111"
+                android:textColor="#00E5FF"/>
 
-        <TextView
-                android:id="@+id/tvAvgSpeed"
+        <Button
+                android:id="@+id/btnSettings"
                 android:layout_width="0dp"
-                android:layout_height="wrap_content"
+                android:layout_height="48dp"
                 android:layout_weight="1"
-                android:text="Avg: 0"
-                android:textColor="#FFFFFF"
-                android:textSize="18sp"
-                android:gravity="center"/>
-
-    </LinearLayout>
-
-    <LinearLayout
-            android:id="@+id/tripRow"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:layout_marginTop="16dp"
-            app:layout_constraintTop_toBottomOf="@id/statsRow"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-        <TextView
-                android:id="@+id/tvTrip"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="Trip: 0.00"
-                android:textSize="20sp"
-                android:textColor="#CCCCCC"/>
-
-        <TextView
-                android:id="@+id/tvTripUnit"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text=" km"
-                android:textSize="20sp"
+                android:layout_marginStart="8dp"
+                android:text="⚙ SETTINGS"
+                android:textSize="12sp"
+                android:letterSpacing="0.1"
+                android:backgroundTint="#111111"
                 android:textColor="#888888"/>
 
     </LinearLayout>
-
-    <Button
-            android:id="@+id/btnResetTrip"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Reset Trip"
-            android:backgroundTint="#1A1A1A"
-            android:textColor="#00E5FF"
-            android:layout_marginBottom="100dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
-
-    <Button
-            android:id="@+id/btnSettings"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="⚙ Settings"
-            android:backgroundTint="#1A1A1A"
-            android:textColor="#AAAAAA"
-            android:layout_marginBottom="40dp"
-            app:layout_constraintBottom_toBottomOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"/>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
