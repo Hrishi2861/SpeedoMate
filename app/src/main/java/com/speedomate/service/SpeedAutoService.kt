@@ -1,4 +1,3 @@
-// service/SpeedAutoService.kt
 package com.speedomate.service
 
 import android.content.Intent
@@ -10,8 +9,11 @@ import androidx.car.app.validation.HostValidator
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.speedomate.data.PrefsManager
+import com.speedomate.data.TripDatabase
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.combine
+import androidx.car.app.model.CarIcon
+import androidx.core.graphics.drawable.IconCompat
 
 class SpeedAutoService : CarAppService() {
     override fun createHostValidator() = HostValidator.ALLOW_ALL_HOSTS_VALIDATOR
@@ -20,26 +22,30 @@ class SpeedAutoService : CarAppService() {
 
 class SpeedSession : Session() {
     override fun onCreateScreen(intent: Intent): Screen {
+        // ✅ Bug 1 fix — start service from Auto
+        val serviceIntent = Intent(carContext, SpeedTrackingService::class.java)
+        carContext.startForegroundService(serviceIntent)
         return SpeedScreen(carContext)
     }
+
+    override fun onNewIntent(intent: Intent) {}
 }
 
 class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) {
 
     private val prefs = PrefsManager(carContext)
+    private val database = TripDatabase.getDatabase(carContext)
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     private var speedText = "0"
-    private var maxText = "0"
-    private var avgText = "0"
-    private var tripText = "0.0"
-    private var unit = "km/h"
+    private var maxText   = "0"
+    private var avgText   = "0"
+    private var tripText  = "0.0"
+    private var unit      = "km/h"
 
     init {
         lifecycle.addObserver(LifecycleEventObserver { _, event ->
-            if (event == Lifecycle.Event.ON_DESTROY) {
-                scope.cancel()
-            }
+            if (event == Lifecycle.Event.ON_DESTROY) scope.cancel()
         })
 
         scope.launch {
@@ -50,13 +56,11 @@ class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) 
                 SpeedTrackingService.tripDistance,
                 prefs.isMetric
             ) { values ->
-                // combine with 5 flows uses array form
-                val speed = values[0] as Float
-                val max   = values[1] as Float
-                val avg   = values[2] as Float
-                val trip  = values[3] as Double
+                val speed  = values[0] as Float
+                val max    = values[1] as Float
+                val avg    = values[2] as Float
+                val trip   = values[3] as Double
                 val metric = values[4] as Boolean
-
                 val factor = if (metric) 3.6f else 2.237f
                 val distFactor = if (metric) 1.0 else 0.621371
                 unit      = if (metric) "km/h" else "mph"
@@ -64,9 +68,7 @@ class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) 
                 maxText   = "%.0f".format(max * factor)
                 avgText   = "%.0f".format(avg * factor)
                 tripText  = "%.2f".format(trip * distFactor)
-            }.collect {
-                invalidate()
-            }
+            }.collect { invalidate() }
         }
     }
 
@@ -82,11 +84,30 @@ class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) 
             .addText("Distance: $tripText ${if (unit == "km/h") "km" else "mi"}")
             .build()
 
-        val resetAction = Action.Builder()
-            .setTitle("Reset Trip")
+        // ✅ Bug 2 fix — Save & Reset from Auto
+        val saveResetAction = Action.Builder()
+            .setTitle("Save+Reset")
             .setOnClickListener {
-                SpeedTrackingService.resetTrip(prefs, scope)
-                invalidate()
+                SpeedTrackingService.saveAndResetTrip(prefs, scope, database) {
+                    invalidate()
+                }
+            }
+            .build()
+
+// Discard — must use icon only (no title), second action can't have custom title
+        val discardAction = Action.Builder()
+            .setIcon(
+                CarIcon.Builder(
+                    IconCompat.createWithResource(
+                        carContext,
+                        android.R.drawable.ic_menu_delete
+                    )
+                ).build()
+            )
+            .setOnClickListener {
+                SpeedTrackingService.discardAndResetTrip(prefs, scope) {
+                    invalidate()
+                }
             }
             .build()
 
@@ -104,7 +125,8 @@ class SpeedScreen(carContext: androidx.car.app.CarContext) : Screen(carContext) 
             )
             .setActionStrip(
                 ActionStrip.Builder()
-                    .addAction(resetAction)
+                    .addAction(saveResetAction)
+                    .addAction(discardAction)
                     .build()
             )
             .build()

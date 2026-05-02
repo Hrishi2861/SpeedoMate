@@ -1,39 +1,58 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Android Auto feature (not required, just declared) -->
+    <uses-feature
+            android:name="android.hardware.type.automotive"
+            android:required="false"/>
+
     <application
             android:label="SpeedoMate"
             android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:supportsRtl="true"
             android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
 
+        <!-- Required for Android Auto -->
         <meta-data
                 android:name="androidx.car.app.minCarApiLevel"
                 android:value="1"/>
 
-        <!-- Phone UI -->
-        <activity android:name=".ui.MainActivity"
-                  android:exported="true">
+        <!-- Declares Android Auto support -->
+        <meta-data
+                android:name="com.google.android.gms.car.application"
+                android:resource="@xml/automotive_app_desc"/>
+
+        <!-- Main phone UI -->
+        <activity
+                android:name=".ui.MainActivity"
+                android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
         </activity>
 
+        <!-- Settings screen -->
         <activity android:name=".ui.SettingsActivity"/>
 
-        <!-- Background GPS service -->
+        <!-- Trip History screen -->
+        <activity android:name=".ui.TripHistoryActivity"/>
+
+        <!-- Background GPS foreground service -->
         <service
                 android:name=".service.SpeedTrackingService"
                 android:foregroundServiceType="location"
                 android:exported="false"/>
 
-        <!-- ✅ Android Auto CarAppService — THIS IS THE KEY ENTRY POINT -->
+        <!-- Android Auto CarAppService -->
         <service
                 android:name=".service.SpeedAutoService"
                 android:exported="true">
@@ -41,12 +60,11 @@
                 <action android:name="androidx.car.app.CarAppService"/>
                 <category android:name="androidx.car.app.category.POI"/>
             </intent-filter>
+            <meta-data
+                    android:name="distractionOptimized"
+                    android:value="true"/>
         </service>
 
-        <!-- Declares this app supports Android Auto -->
-        <meta-data
-                android:name="com.google.android.gms.car.application"
-                android:resource="@xml/automotive_app_desc"/>
-
     </application>
+
 </manifest>

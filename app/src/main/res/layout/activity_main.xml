@@ -168,7 +168,7 @@
             android:id="@+id/btnRow"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:orientation="horizontal"
+            android:orientation="vertical"
             android:layout_marginStart="16dp"
             android:layout_marginEnd="16dp"
             android:layout_marginBottom="16dp"
@@ -176,29 +176,66 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent">
 
-        <Button
-                android:id="@+id/btnResetTrip"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:layout_marginEnd="8dp"
-                android:text="RESET TRIP"
-                android:textSize="12sp"
-                android:letterSpacing="0.1"
-                android:backgroundTint="#111111"
-                android:textColor="#00E5FF"/>
+        <!-- Top row: Save+Reset and Discard -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal"
+                android:layout_marginBottom="8dp">
 
-        <Button
-                android:id="@+id/btnSettings"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp"
-                android:text="⚙ SETTINGS"
-                android:textSize="12sp"
-                android:letterSpacing="0.1"
-                android:backgroundTint="#111111"
-                android:textColor="#888888"/>
+            <Button
+                    android:id="@+id/btnResetTrip"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="💾 SAVE + RESET"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#00E5FF"/>
+
+            <Button
+                    android:id="@+id/btnDiscardTrip"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:text="🗑 DISCARD"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#FF4444"/>
+
+        </LinearLayout>
+
+        <!-- Bottom row: Trip History and Settings -->
+        <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+            <Button
+                    android:id="@+id/btnTripHistory"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginEnd="4dp"
+                    android:text="📋 TRIPS"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#AAAAAA"/>
+
+            <Button
+                    android:id="@+id/btnSettings"
+                    android:layout_width="0dp"
+                    android:layout_height="48dp"
+                    android:layout_weight="1"
+                    android:layout_marginStart="4dp"
+                    android:text="⚙ SETTINGS"
+                    android:textSize="11sp"
+                    android:backgroundTint="#111111"
+                    android:textColor="#888888"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
