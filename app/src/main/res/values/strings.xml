@@ -1,3 +1,4 @@
 <resources>
     <string name="app_name">SpeedoMate</string>
+    <string name="widget_description">SpeedoMate live speed widget</string>
 </resources>

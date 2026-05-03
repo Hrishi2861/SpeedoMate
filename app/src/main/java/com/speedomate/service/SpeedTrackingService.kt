@@ -18,6 +18,12 @@ import org.json.JSONArray
 class SpeedTrackingService : LifecycleService() {
 
     companion object {
+        const val ACTION_SPEED_UPDATE = "com.speedomate.SPEED_UPDATE"
+        const val EXTRA_SPEED = "speed"
+        const val EXTRA_MAX = "max"
+        const val EXTRA_AVG = "avg"
+        const val EXTRA_TRIP = "trip"
+        const val EXTRA_UNIT = "unit"
         private val _speedMs = MutableStateFlow(0f)
         val speedMs: StateFlow<Float> = _speedMs
 
@@ -127,6 +133,16 @@ class SpeedTrackingService : LifecycleService() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
+                // Broadcast to widget
+                val intent = Intent(ACTION_SPEED_UPDATE).apply {
+                    setPackage(packageName)
+                    putExtra(EXTRA_SPEED, _speedMs.value)
+                    putExtra(EXTRA_MAX, _maxSpeed.value)
+                    putExtra(EXTRA_AVG, _avgSpeed.value)
+                    putExtra(EXTRA_TRIP, _tripDistance.value.toFloat())
+                }
+                sendBroadcast(intent)
+
                 val location = result.lastLocation ?: return
                 val speed = if (location.hasSpeed()) location.speed else 0f
                 _speedMs.value = speed
