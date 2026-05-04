@@ -19,32 +19,37 @@ class SpeedTrackingService : LifecycleService() {
 
     companion object {
         const val ACTION_SPEED_UPDATE = "com.speedomate.SPEED_UPDATE"
-        const val EXTRA_SPEED = "speed"
-        const val EXTRA_MAX = "max"
-        const val EXTRA_AVG = "avg"
-        const val EXTRA_TRIP = "trip"
-        const val EXTRA_UNIT = "unit"
-        private val _speedMs = MutableStateFlow(0f)
+        const val EXTRA_SPEED    = "speed"
+        const val EXTRA_MAX      = "max"
+        const val EXTRA_AVG      = "avg"
+        const val EXTRA_TRIP     = "trip"
+        const val EXTRA_ALTITUDE = "altitude"
+
+        private val _speedMs      = MutableStateFlow(0f)
         val speedMs: StateFlow<Float> = _speedMs
 
-        private val _maxSpeed = MutableStateFlow(0f)
+        private val _maxSpeed     = MutableStateFlow(0f)
         val maxSpeed: StateFlow<Float> = _maxSpeed
 
-        private val _avgSpeed = MutableStateFlow(0f)
+        private val _avgSpeed     = MutableStateFlow(0f)
         val avgSpeed: StateFlow<Float> = _avgSpeed
 
         private val _tripDistance = MutableStateFlow(0.0)
         val tripDistance: StateFlow<Double> = _tripDistance
 
-        var speedSum = 0f
-        var speedCount = 0f
+        private val _altitude     = MutableStateFlow(0.0)
+        val altitude: StateFlow<Double> = _altitude
+
+        var speedSum     = 0f
+        var speedCount   = 0f
+        var minAlt       = Double.MAX_VALUE
+        var maxAlt       = Double.MIN_VALUE
         var lastLocation: android.location.Location? = null
         var tripStartTime = System.currentTimeMillis()
 
-        // Speed history for graph
-        val speedHistory = mutableListOf<Float>()
+        val speedHistory    = mutableListOf<Float>()
+        val altitudeHistory = mutableListOf<Double>()
 
-        // Save & Reset — saves trip to DB then resets
         fun saveAndResetTrip(
             prefs: PrefsManager,
             scope: CoroutineScope,
@@ -52,55 +57,62 @@ class SpeedTrackingService : LifecycleService() {
             onDone: (() -> Unit)? = null
         ) {
             scope.launch {
-                // Save trip to Room DB
                 if (speedCount > 0f || _tripDistance.value > 0.0) {
                     val speedJson = JSONArray().apply {
                         speedHistory.forEach { put(it) }
                     }.toString()
+                    val altJson = JSONArray().apply {
+                        altitudeHistory.forEach { put(it) }
+                    }.toString()
 
                     database.tripDao().insertTrip(
                         TripEntity(
-                            startTime = tripStartTime,
-                            endTime = System.currentTimeMillis(),
-                            distanceKm = _tripDistance.value,
-                            maxSpeedMs = _maxSpeed.value,
-                            avgSpeedMs = if (speedCount > 0) speedSum / speedCount else 0f,
-                            speedPoints = speedJson
+                            startTime      = tripStartTime,
+                            endTime        = System.currentTimeMillis(),
+                            distanceKm     = _tripDistance.value,
+                            maxSpeedMs     = _maxSpeed.value,
+                            avgSpeedMs     = if (speedCount > 0) speedSum / speedCount else 0f,
+                            minAltitude    = if (minAlt == Double.MAX_VALUE) 0.0 else minAlt,
+                            maxAltitude    = if (maxAlt == Double.MIN_VALUE) 0.0 else maxAlt,
+                            speedPoints    = speedJson,
+                            altitudePoints = altJson
                         )
                     )
                 }
-                doReset(prefs, scope)
+                doReset(prefs)
                 onDone?.invoke()
             }
         }
 
-        // Discard Reset — just resets without saving
         fun discardAndResetTrip(
             prefs: PrefsManager,
             scope: CoroutineScope,
             onDone: (() -> Unit)? = null
         ) {
             scope.launch {
-                doReset(prefs, scope)
+                doReset(prefs)
                 onDone?.invoke()
             }
         }
 
-        private suspend fun doReset(prefs: PrefsManager, scope: CoroutineScope) {
-            _maxSpeed.value     = 0f
-            _avgSpeed.value     = 0f
-            _tripDistance.value = 0.0
-            speedSum            = 0f
-            speedCount          = 0f
-            lastLocation        = null
-            tripStartTime       = System.currentTimeMillis()
+        private suspend fun doReset(prefs: PrefsManager) {
+            _maxSpeed.value      = 0f
+            _avgSpeed.value      = 0f
+            _tripDistance.value  = 0.0
+            _altitude.value      = 0.0
+            speedSum             = 0f
+            speedCount           = 0f
+            minAlt               = Double.MAX_VALUE
+            maxAlt               = Double.MIN_VALUE
+            lastLocation         = null
+            tripStartTime        = System.currentTimeMillis()
             speedHistory.clear()
+            altitudeHistory.clear()
             prefs.resetTripData()
         }
 
-        // Keep old resetTrip for Auto compat
         fun resetTrip(prefs: PrefsManager, scope: CoroutineScope) {
-            scope.launch { doReset(prefs, scope) }
+            scope.launch { doReset(prefs) }
         }
     }
 
@@ -133,25 +145,19 @@ class SpeedTrackingService : LifecycleService() {
 
         locationCallback = object : LocationCallback() {
             override fun onLocationResult(result: LocationResult) {
-                // Broadcast to widget
-                val intent = Intent(ACTION_SPEED_UPDATE).apply {
-                    setPackage(packageName)
-                    putExtra(EXTRA_SPEED, _speedMs.value)
-                    putExtra(EXTRA_MAX, _maxSpeed.value)
-                    putExtra(EXTRA_AVG, _avgSpeed.value)
-                    putExtra(EXTRA_TRIP, _tripDistance.value.toFloat())
-                }
-                sendBroadcast(intent)
-
                 val location = result.lastLocation ?: return
                 val speed = if (location.hasSpeed()) location.speed else 0f
-                _speedMs.value = speed
+                val alt   = if (location.hasAltitude()) location.altitude else 0.0
+
+                _speedMs.value   = speed
+                _altitude.value  = alt
 
                 if (speed > _maxSpeed.value) _maxSpeed.value = speed
+                if (alt < minAlt) minAlt = alt
+                if (alt > maxAlt) maxAlt = alt
 
                 lastLocation?.let { prev ->
-                    val dist = prev.distanceTo(location) / 1000.0
-                    _tripDistance.value += dist
+                    _tripDistance.value += prev.distanceTo(location) / 1000.0
                 }
                 lastLocation = location
 
@@ -159,8 +165,10 @@ class SpeedTrackingService : LifecycleService() {
                 speedCount++
                 _avgSpeed.value = speedSum / speedCount
 
-                // Record speed history (max 500 points)
-                if (speedHistory.size < 500) speedHistory.add(speed)
+                if (speedHistory.size < 500) {
+                    speedHistory.add(speed)
+                    altitudeHistory.add(alt)
+                }
 
                 lifecycleScope.launch {
                     prefs.saveTripData(
@@ -170,13 +178,21 @@ class SpeedTrackingService : LifecycleService() {
                         speedCount
                     )
                 }
+
+                // Broadcast to widget
+                sendBroadcast(Intent(ACTION_SPEED_UPDATE).apply {
+                    setPackage(packageName)
+                    putExtra(EXTRA_SPEED,    speed)
+                    putExtra(EXTRA_MAX,      _maxSpeed.value)
+                    putExtra(EXTRA_AVG,      _avgSpeed.value)
+                    putExtra(EXTRA_TRIP,     _tripDistance.value.toFloat())
+                    putExtra(EXTRA_ALTITUDE, alt.toFloat())
+                })
             }
         }
 
         fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
-        fusedLocationClient.requestLocationUpdates(
-            request, locationCallback, mainLooper
-        )
+        fusedLocationClient.requestLocationUpdates(request, locationCallback, mainLooper)
     }
 
     private fun buildNotification(): Notification {

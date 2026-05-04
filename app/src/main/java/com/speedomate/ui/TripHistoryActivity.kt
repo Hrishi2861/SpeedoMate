@@ -149,25 +149,35 @@ class TripAdapter(
             headerRow.addView(dateText)
             headerRow.addView(deleteBtn)
 
-            // Stats row
+            // Stats & ALt row
+            val altRange = if (trip.maxAltitude > 0)
+                "  ↑ ${trip.minAltitude.toInt()}–${trip.maxAltitude.toInt()}m"
+            else ""
+
             val statsText = TextView(card.context).apply {
-                text = "📍 $dist   🏎 Max: $maxSpd   ⌀ Avg: $avgSpd"
-                textSize = 14f
-                setTextColor(android.graphics.Color.WHITE)
-                setPadding(0, 8, 0, 12)
+                text = "📍 $dist   🏎 Max: $maxSpd   ⌀ Avg: $avgSpd$altRange"
+                // ... rest same
             }
 
             // Speed graph
+            // Replace the graphView block in bind() with:
             val graphView = SpeedGraphView(card.context).apply {
                 layoutParams = LinearLayout.LayoutParams(
-                    ViewGroup.LayoutParams.MATCH_PARENT, 120
+                    ViewGroup.LayoutParams.MATCH_PARENT, 200
                 )
-                val points = mutableListOf<Float>()
+                val speeds = mutableListOf<Float>()
+                val alts   = mutableListOf<Double>()
                 try {
                     val arr = JSONArray(trip.speedPoints)
-                    for (i in 0 until arr.length()) points.add(arr.getDouble(i).toFloat())
+                    for (i in 0 until arr.length()) speeds.add(arr.getDouble(i).toFloat())
                 } catch (e: Exception) {}
-                setSpeedPoints(points, if (isMetric) 3.6f else 2.237f)
+                try {
+                    val arr = JSONArray(trip.altitudePoints)
+                    for (i in 0 until arr.length()) alts.add(arr.getDouble(i))
+                } catch (e: Exception) {}
+
+                val duration = trip.endTime - trip.startTime
+                setData(speeds, alts, if (isMetric) 3.6f else 2.237f, duration)
             }
 
             container.addView(headerRow)

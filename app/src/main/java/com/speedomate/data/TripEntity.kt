@@ -11,5 +11,8 @@ data class TripEntity(
     val distanceKm: Double,
     val maxSpeedMs: Float,
     val avgSpeedMs: Float,
-    val speedPoints: String  // JSON array of speed readings over time
+    val minAltitude: Double = 0.0,
+    val maxAltitude: Double = 0.0,
+    val speedPoints: String,    // JSON array
+    val altitudePoints: String  // JSON array
 )

@@ -35,6 +35,9 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
         SpeedTrackingService.tripDistance, isMetric
     ) { km, metric -> if (metric) km else km * 0.621371 }.conflate()
 
+    // Altitude in meters (always metric for altitude)
+    val altitude: Flow<Double> = SpeedTrackingService.altitude
+
     val allTrips: Flow<List<TripEntity>> = database.tripDao().getAllTrips()
 
     fun startService() {
