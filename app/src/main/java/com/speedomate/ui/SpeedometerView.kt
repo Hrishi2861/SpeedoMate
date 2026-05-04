@@ -23,8 +23,15 @@ class SpeedometerView @JvmOverloads constructor(
     private var glowAlpha = 0.4f
     private var dangerFlicker = 1f
     private var startupDone = false
+    private var displayedBearing = 0f
 
     var unit = "km/h"
+        set(value) { field = value; invalidate() }
+
+    var speedLimitExceeded = false
+        set(value) { field = value; invalidate() }
+
+    var speedLimitThreshold = 0f
         set(value) { field = value; invalidate() }
 
     // Animators
@@ -107,6 +114,25 @@ class SpeedometerView @JvmOverloads constructor(
         color = Color.parseColor("#FF3D3D")
     }
 
+    private val compassArrowPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        style = Paint.Style.FILL
+        color = Color.parseColor("#00E5FF")
+    }
+    private val compassTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFFFFF")
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val compassNPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FF4444")
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+    }
+    private val compassCardinalPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#888888")
+        textAlign = Paint.Align.CENTER
+    }
+
     private val startAngle = 135f
     private val sweepAngle = 270f
 
@@ -127,7 +153,6 @@ class SpeedometerView @JvmOverloads constructor(
         startupAnimator?.cancel()
         dangerAnimator?.cancel()
     }
-
     // ── Startup sweep animation ──────────────────────────────────────
     private fun runStartupAnimation() {
         startupAnimator = ValueAnimator.ofFloat(0f, maxDisplaySpeed, 0f).apply {
@@ -171,7 +196,7 @@ class SpeedometerView @JvmOverloads constructor(
         needleAnimator?.cancel()
         numberAnimator?.cancel()
 
-        val isInDangerZone = clampedSpeed > maxDisplaySpeed * 0.8f
+        val isInDangerZone = if (speedLimitThreshold > 0f) clampedSpeed > speedLimitThreshold else clampedSpeed > maxDisplaySpeed * 0.8f
         if (isInDangerZone) startDangerFlicker() else stopDangerFlicker()
 
         // Needle with overshoot interpolator
@@ -226,6 +251,28 @@ class SpeedometerView @JvmOverloads constructor(
         dangerFlicker = 1f
     }
 
+    fun setHeading(bearing: Float) {
+        if (displayedBearing == bearing) return
+        displayedBearing = bearing
+        invalidate()
+    }
+
+    private fun bearingToCardinal(bearing: Float): String {
+        if (!bearing.isFinite()) return ""
+        val b = ((bearing % 360f) + 360f) % 360f
+        return when (b) {
+            in 337.5f..360f, in 0f..22.5f -> "N"
+            in 22.5f..67.5f -> "NE"
+            in 67.5f..112.5f -> "E"
+            in 112.5f..157.5f -> "SE"
+            in 157.5f..202.5f -> "S"
+            in 202.5f..247.5f -> "SW"
+            in 247.5f..292.5f -> "W"
+            in 292.5f..337.5f -> "NW"
+            else -> ""
+        }
+    }
+
     // ── Draw ─────────────────────────────────────────────────────────
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -252,8 +299,9 @@ class SpeedometerView @JvmOverloads constructor(
         canvas.drawArc(arcRect, startAngle, sweepAngle, false, arcBgPaint)
 
         // Danger zone arc with flicker
-        val dangerStart = startAngle + sweepAngle * 0.8f
-        val dangerSweep = sweepAngle * 0.2f
+        val dangerFraction = if (speedLimitThreshold > 0f) speedLimitThreshold / maxDisplaySpeed else 0.8f
+        val dangerStart = startAngle + sweepAngle * dangerFraction
+        val dangerSweep = sweepAngle * (1f - dangerFraction)
         dangerArcPaint.strokeWidth = arcStroke
         dangerArcPaint.alpha = (255 * dangerFlicker).toInt()
         canvas.drawArc(arcRect, dangerStart, dangerSweep, false, dangerArcPaint)
@@ -262,12 +310,18 @@ class SpeedometerView @JvmOverloads constructor(
         // Speed fill arc
         val speedFraction = displayedSpeed / maxDisplaySpeed
         val fillSweep = (sweepAngle * speedFraction).coerceAtLeast(0f)
+        val isInDangerZone = if (speedLimitThreshold > 0f) displayedSpeed > speedLimitThreshold else displayedSpeed > maxDisplaySpeed * 0.8f
 
         if (fillSweep > 0f) {
+            val isRed = speedLimitExceeded || isInDangerZone
+
             // Glow layer
             arcGlowPaint.strokeWidth = arcStroke * 2.5f
             arcGlowPaint.color = Color.argb(
-                (255 * glowAlpha * 0.6f).toInt(), 0, 229, 255
+                (255 * glowAlpha * 0.6f).toInt(),
+                if (isRed) 255 else 0,
+                if (isRed) 61 else 229,
+                if (isRed) 61 else 255
             )
             arcGlowPaint.maskFilter = BlurMaskFilter(arcStroke * 1.5f, BlurMaskFilter.Blur.NORMAL)
             canvas.drawArc(arcRect, startAngle, fillSweep, false, arcGlowPaint)
@@ -275,6 +329,7 @@ class SpeedometerView @JvmOverloads constructor(
             // Main arc
             arcFillPaint.strokeWidth = arcStroke
             arcFillPaint.maskFilter = null
+            arcFillPaint.color = if (isRed) Color.parseColor("#FF3D3D") else Color.parseColor("#00E5FF")
             canvas.drawArc(arcRect, startAngle, fillSweep, false, arcFillPaint)
         }
 
@@ -314,17 +369,22 @@ class SpeedometerView @JvmOverloads constructor(
         val nx = cos(needleAngle).toFloat()
         val ny = sin(needleAngle).toFloat()
 
+        val needleColor = if (speedLimitExceeded) Color.parseColor("#FF3D3D") else Color.parseColor("#00E5FF")
+
         needleGlowPaint.strokeWidth = radius * 0.05f
         needleGlowPaint.alpha = (255 * glowAlpha).toInt()
+        needleGlowPaint.color = needleColor
         canvas.drawLine(cx - tailLen * nx, cy - tailLen * ny,
             cx + needleLen * nx, cy + needleLen * ny, needleGlowPaint)
 
         // Needle
         needlePaint.strokeWidth = radius * 0.022f
+        needlePaint.color = needleColor
         canvas.drawLine(cx - tailLen * nx, cy - tailLen * ny,
             cx + needleLen * nx, cy + needleLen * ny, needlePaint)
 
         // Center dots
+        centerDotPaint.color = needleColor
         canvas.drawCircle(cx, cy, radius * 0.09f, centerDotPaint)
         canvas.drawCircle(cx, cy, radius * 0.05f, centerDotInnerPaint)
 
@@ -338,5 +398,22 @@ class SpeedometerView @JvmOverloads constructor(
         // Unit
         unitTextPaint.textSize = radius * 0.11f
         canvas.drawText(unit, cx, cy + radius * 0.80f, unitTextPaint)
+
+        // ── Compass arrow at top center (fixed pointing UP) ──────────
+        if (displayedBearing > 0f) {
+            val compassY = cy - radius * 0.88f
+            val arrowSize = radius * 0.05f
+            val degreeLabel = "${bearingToCardinal(displayedBearing)} ${displayedBearing.toInt()}°"
+
+            compassTextPaint.textSize = radius * 0.085f
+            canvas.drawText(degreeLabel, cx, compassY - arrowSize * 3.5f, compassTextPaint)
+
+            val arrowPath = Path()
+            arrowPath.moveTo(cx, compassY - arrowSize * 2.5f)
+            arrowPath.lineTo(cx - arrowSize, compassY)
+            arrowPath.lineTo(cx + arrowSize, compassY)
+            arrowPath.close()
+            canvas.drawPath(arrowPath, compassArrowPaint)
+        }
     }
 }

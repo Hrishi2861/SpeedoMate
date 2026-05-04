@@ -1,10 +1,24 @@
 package com.speedomate.ui
 
 import android.Manifest
+import android.content.BroadcastReceiver
+import android.content.Context
 import android.content.Intent
+import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorEvent
+import android.hardware.SensorEventListener
+import android.hardware.SensorManager
+import android.media.AudioManager
+import android.media.ToneGenerator
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
@@ -12,6 +26,7 @@ import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
+import androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
 import androidx.lifecycle.lifecycleScope
 import com.speedomate.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.collectLatest
@@ -21,6 +36,35 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
     private val vm: SpeedViewModel by viewModels()
+    private lateinit var sensorManager: SensorManager
+    private lateinit var vibrator: Vibrator
+    private var rotationSensor: Sensor? = null
+    private val alertHandler = Handler(Looper.getMainLooper())
+
+    private val alertReceiver = object : BroadcastReceiver() {
+        override fun onReceive(context: Context?, intent: Intent?) {
+            if (intent?.action == "com.speedomate.SPEED_LIMIT_ALERT") {
+                triggerAlert()
+            }
+        }
+    }
+
+    private val sensorListener = object : SensorEventListener {
+        private val rotationMatrix = FloatArray(9)
+        private val orientationValues = FloatArray(3)
+
+        override fun onSensorChanged(event: SensorEvent) {
+            if (event.sensor.type == Sensor.TYPE_ROTATION_VECTOR) {
+                SensorManager.getRotationMatrixFromVector(rotationMatrix, event.values)
+                SensorManager.getOrientation(rotationMatrix, orientationValues)
+                var azimuth = Math.toDegrees(orientationValues[0].toDouble()).toFloat()
+                azimuth = ((azimuth % 360f) + 360f) % 360f
+                binding.speedometerView.setHeading(azimuth)
+            }
+        }
+
+        override fun onAccuracyChanged(sensor: Sensor?, accuracy: Int) {}
+    }
 
     // Track if user has denied before
     private val prefs by lazy {
@@ -49,8 +93,15 @@ class MainActivity : AppCompatActivity() {
         binding = ActivityMainBinding.inflate(layoutInflater)
         setContentView(binding.root)
 
+        vibrator = getSystemService(Vibrator::class.java)
+        sensorManager = getSystemService(SensorManager::class.java)
+        rotationSensor = sensorManager.getDefaultSensor(Sensor.TYPE_ROTATION_VECTOR)
+
+        registerReceiver(alertReceiver, IntentFilter("com.speedomate.SPEED_LIMIT_ALERT"), RECEIVER_NOT_EXPORTED)
+
         checkPermissionsAndStart()
         observeSpeed()
+        observeSpeedLimitAlert()
 
         binding.btnResetTrip.setOnClickListener {
             vm.saveAndResetTrip {
@@ -86,11 +137,18 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        // Re-check permission when user returns from Settings
         val fine = Manifest.permission.ACCESS_FINE_LOCATION
         if (ContextCompat.checkSelfPermission(this, fine) == PackageManager.PERMISSION_GRANTED) {
             vm.startService()
         }
+        rotationSensor?.let {
+            sensorManager.registerListener(sensorListener, it, SensorManager.SENSOR_DELAY_FASTEST)
+        }
+    }
+
+    override fun onPause() {
+        super.onPause()
+        sensorManager.unregisterListener(sensorListener)
     }
 
     private fun checkPermissionsAndStart() {
@@ -208,6 +266,12 @@ class MainActivity : AppCompatActivity() {
             }
         }
         lifecycleScope.launch {
+            vm.speedLimitThreshold.collectLatest { threshold ->
+                val metric = vm.isMetric.value
+                binding.speedometerView.speedLimitThreshold = threshold.toFloat()
+            }
+        }
+        lifecycleScope.launch {
             vm.currentSpeed.collectLatest { binding.speedometerView.setSpeed(it) }
         }
         lifecycleScope.launch {
@@ -219,5 +283,35 @@ class MainActivity : AppCompatActivity() {
         lifecycleScope.launch {
             vm.tripDistance.collectLatest { binding.tvTrip.text = "%.2f".format(it) }
         }
+    }
+
+    private fun observeSpeedLimitAlert() {
+        lifecycleScope.launch {
+            vm.speedLimitAlert.collectLatest { isAlerting ->
+                binding.speedometerView.speedLimitExceeded = isAlerting
+            }
+        }
+    }
+
+    private fun triggerAlert() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            vibrator.vibrate(VibrationEffect.createOneShot(200, VibrationEffect.DEFAULT_AMPLITUDE))
+        } else {
+            @Suppress("DEPRECATION")
+            vibrator.vibrate(200)
+        }
+        playBeep()
+        alertHandler.postDelayed({ playBeep() }, 1000)
+    }
+
+    private fun playBeep() {
+        val toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
+        toneGen.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 200)
+        alertHandler.postDelayed({ toneGen.release() }, 300)
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        unregisterReceiver(alertReceiver)
     }
 }

@@ -5,6 +5,7 @@ import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
+import androidx.datastore.preferences.core.intPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
@@ -18,10 +19,14 @@ class PrefsManager(private val context: Context) {
         val KEY_MAX_SPEED   = floatPreferencesKey("max_speed")
         val KEY_SPEED_SUM   = floatPreferencesKey("speed_sum")
         val KEY_SPEED_COUNT = floatPreferencesKey("speed_count")
+        val KEY_SPEED_LIMIT = intPreferencesKey("speed_limit_threshold")
     }
 
     val isMetric: Flow<Boolean> = context.dataStore.data
         .map { it[KEY_METRIC] ?: true }
+
+    val speedLimitThreshold: Flow<Int> = context.dataStore.data
+        .map { it[KEY_SPEED_LIMIT] ?: 0 }
 
     val savedTripDistance: Flow<Double> = context.dataStore.data
         .map { it[KEY_TRIP_DIST] ?: 0.0 }
@@ -37,6 +42,10 @@ class PrefsManager(private val context: Context) {
 
     suspend fun setMetric(value: Boolean) {
         context.dataStore.edit { it[KEY_METRIC] = value }
+    }
+
+    suspend fun setSpeedLimitThreshold(value: Int) {
+        context.dataStore.edit { it[KEY_SPEED_LIMIT] = value }
     }
 
     suspend fun saveTripData(

@@ -41,7 +41,12 @@
 - 💾 **Persistent Data** — Trip data saved with DataStore, survives app close and phone restart
 - 🔄 **km/h ↔ mph Toggle** — Switch units instantly from Settings
 - 🚗 **Android Auto** — Native Car App integration, view live speed & stats on your car's display
-- 🔄 **Reset Trip** — One tap to reset all trip data from phone or car screen
+- 🚦 **Speed Limit Alerts** — Set a custom speed limit threshold in settings; the danger zone on the gauge starts exactly at your limit. When exceeded, triggers a red gauge, vibration, and double-beep (1s apart)
+- 🧭 **Real-time Compass** — Xiaomi-style fixed arrow pointing UP with cardinal + degree heading display, powered by `ROTATION_VECTOR` sensor for instant response
+- 📤 **Trip Sharing** — Share trips as text summary (with plain URL) or PNG image (with speed graph, stats, and branding) — accessible from Trip History
+- 📈 **Speed Graph** — Visual speed-over-time chart in Trip History
+- 🔴 **Danger Zone Sync** — The red arc on the gauge starts at your configured speed limit (e.g., 80 km/h), not a fixed percentage
+- 🗑️ **Discard Trip** — Reset trip without saving, with confirmation dialog
 - 🌙 **Dark Theme** — Sleek dark UI optimized for driving visibility
 
 ---
@@ -76,11 +81,14 @@ SpeedTrackingService (Background Foreground Service)
 | Language | Kotlin |
 | Architecture | MVVM + StateFlow |
 | Location | Google FusedLocationProviderClient |
+| Sensors | ROTATION_VECTOR for compass heading |
 | Car Integration | AndroidX Car App Library |
 | Persistence | Jetpack DataStore |
 | Background | Foreground Service |
 | UI | Custom Canvas View + ConstraintLayout |
 | Animations | ValueAnimator + ObjectAnimator |
+| Audio | ToneGenerator + AudioManager focus for AA beep routing |
+| Sharing | FileProvider + Bitmap generation for PNG export |
 
 ---
 
@@ -124,6 +132,13 @@ APK will be at `app/build/outputs/apk/debug/app-debug.apk`
 ~/Android/Sdk/extras/google/auto/desktop-head-unit
 ```
 
+### AA Features
+- Live speed, max/avg, distance, heading, and unit toggle in a scrollable list
+- Speed limit exceeded warning row shown when threshold is breached
+- Double-beep alert routed through car speakers via `AudioManager` audio focus
+- Independent Flow collectors ensure UI stays live even when GPS is idle
+- Unit toggle embedded as a list row (bypasses ActionStrip 1-titled-action limit)
+
 ---
 
 ## 📁 Project Structure
@@ -132,15 +147,21 @@ APK will be at `app/build/outputs/apk/debug/app-debug.apk`
 com.speedomate/
 ├── data/
 │   ├── PrefsManager.kt          # DataStore for settings & trip persistence
-│   └── TripData.kt              # Trip data model
+│   ├── TripData.kt              # Trip data model
+│   ├── TripDao.kt               # Room DAO for trip history
+│   └── TripDatabase.kt          # Room database
 ├── service/
-│   ├── SpeedTrackingService.kt  # Background GPS + speed tracking
-│   └── SpeedAutoService.kt      # Android Auto CarAppService
-└── ui/
-    ├── MainActivity.kt          # Main phone UI
-    ├── SettingsActivity.kt      # km/h ↔ mph toggle
-    ├── SpeedViewModel.kt        # MVVM ViewModel
-    └── SpeedometerView.kt       # Custom analog gauge canvas view
+│   ├── SpeedTrackingService.kt  # Background GPS + speed tracking + alert broadcast
+│   └── SpeedAutoService.kt      # Android Auto CarAppService with live updates & beep
+├── ui/
+│   ├── MainActivity.kt          # Main phone UI with sensor listener & alert handling
+│   ├── SettingsActivity.kt      # Speed limit threshold seekbar & unit toggle
+│   ├── TripHistoryActivity.kt   # Trip list with share (text/image) & delete
+│   ├── SpeedGraphView.kt        # Custom canvas view for speed-over-time graph
+│   ├── SpeedViewModel.kt        # MVVM ViewModel
+│   └── SpeedometerView.kt       # Custom analog gauge with compass & danger zone
+└── util/
+    └── TripShareHelper.kt       # PNG bitmap generation & text share intent
 ```
 
 ---
@@ -154,8 +175,41 @@ com.speedomate/
 | `FOREGROUND_SERVICE` | Background speed tracking |
 | `FOREGROUND_SERVICE_LOCATION` | Location while in background |
 | `POST_NOTIFICATIONS` | Foreground service notification |
+| `VIBRATE` | Speed limit alert vibration |
 
 > ✅ No internet permission required — everything works offline!
+
+---
+
+## 🔔 Speed Limit Alerts
+
+Set a custom speed limit in **Settings** using the seekbar. When your speed exceeds the threshold:
+1. The danger zone on the gauge starts exactly at your limit (not a fixed 80%)
+2. The gauge turns red with a flickering danger arc
+3. Your phone vibrates (200ms)
+4. A double-beep sounds (two 200ms beeps, 1 second apart)
+5. Android Auto plays the same double-beep through car speakers
+
+The alert fires once per crossing — it won't repeat until your speed drops below the limit and rises above it again.
+
+---
+
+## 🧭 Compass
+
+The speedometer includes a real-time compass display:
+- Fixed arrow pointing UP at the top center of the gauge
+- Cardinal direction (N, NE, E, SE, S, SW, W, NW) + degree label above the arrow
+- Powered by `Sensor.TYPE_ROTATION_VECTOR` for fused, drift-free heading
+- Updates instantly at `SENSOR_DELAY_FASTEST` (~50Hz)
+- Works on both phone and Android Auto
+
+---
+
+## 📤 Trip Sharing
+
+From Trip History, share any trip:
+- **Text**: Speed summary with max/avg speed, distance, duration, and a plain URL
+- **Image**: PNG bitmap with speed graph, stats, and SpeedoMate branding (non-overlapping layout)
 
 ---
 

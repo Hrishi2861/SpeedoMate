@@ -52,4 +52,58 @@
             app:layout_constraintStart_toStartOf="parent"
             android:layout_marginTop="6dp"/>
 
+    <View
+            android:id="@+id/divider"
+            android:layout_width="0dp"
+            android:layout_height="1dp"
+            android:background="#222222"
+            app:layout_constraintTop_toBottomOf="@id/tvUnitHint"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="32dp"/>
+
+    <TextView
+            android:id="@+id/tvSpeedLimitLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Speed Limit Alert"
+            android:textSize="18sp"
+            android:textColor="#AAAAAA"
+            app:layout_constraintTop_toBottomOf="@id/divider"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="32dp"/>
+
+    <TextView
+            android:id="@+id/tvSpeedLimitValue"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Off"
+            android:textSize="16sp"
+            android:textColor="#00E5FF"
+            android:fontFamily="monospace"
+            app:layout_constraintTop_toBottomOf="@id/tvSpeedLimitLabel"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="12dp"/>
+
+    <SeekBar
+            android:id="@+id/seekSpeedLimit"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:max="200"
+            app:layout_constraintTop_toBottomOf="@id/tvSpeedLimitValue"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintEnd_toEndOf="parent"
+            android:layout_marginTop="8dp"/>
+
+    <TextView
+            android:id="@+id/tvSpeedLimitHint"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Drag to set speed limit (0 = disabled)"
+            android:textSize="13sp"
+            android:textColor="#555555"
+            app:layout_constraintTop_toBottomOf="@id/seekSpeedLimit"
+            app:layout_constraintStart_toStartOf="parent"
+            android:layout_marginTop="6dp"/>
+
 </androidx.constraintlayout.widget.ConstraintLayout>

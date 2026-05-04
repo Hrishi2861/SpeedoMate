@@ -19,11 +19,13 @@ class SpeedTrackingService : LifecycleService() {
 
     companion object {
         const val ACTION_SPEED_UPDATE = "com.speedomate.SPEED_UPDATE"
+        const val ACTION_SPEED_LIMIT_ALERT = "com.speedomate.SPEED_LIMIT_ALERT"
         const val EXTRA_SPEED    = "speed"
         const val EXTRA_MAX      = "max"
         const val EXTRA_AVG      = "avg"
         const val EXTRA_TRIP     = "trip"
         const val EXTRA_ALTITUDE = "altitude"
+        const val EXTRA_BEARING  = "bearing"
 
         private val _speedMs      = MutableStateFlow(0f)
         val speedMs: StateFlow<Float> = _speedMs
@@ -40,12 +42,20 @@ class SpeedTrackingService : LifecycleService() {
         private val _altitude     = MutableStateFlow(0.0)
         val altitude: StateFlow<Double> = _altitude
 
+        private val _bearing      = MutableStateFlow(0f)
+        val bearing: StateFlow<Float> = _bearing
+
+        private val _speedLimitAlert = MutableStateFlow(false)
+        val speedLimitAlert: StateFlow<Boolean> = _speedLimitAlert
+
         var speedSum     = 0f
         var speedCount   = 0f
         var minAlt       = Double.MAX_VALUE
         var maxAlt       = Double.MIN_VALUE
         var lastLocation: android.location.Location? = null
         var tripStartTime = System.currentTimeMillis()
+        var hasAlertedThisCrossing = false
+        var currentSpeedLimitThreshold = 0
 
         val speedHistory    = mutableListOf<Float>()
         val altitudeHistory = mutableListOf<Double>()
@@ -100,12 +110,15 @@ class SpeedTrackingService : LifecycleService() {
             _avgSpeed.value      = 0f
             _tripDistance.value  = 0.0
             _altitude.value      = 0.0
+            _bearing.value       = 0f
+            _speedLimitAlert.value = false
             speedSum             = 0f
             speedCount           = 0f
             minAlt               = Double.MAX_VALUE
             maxAlt               = Double.MIN_VALUE
             lastLocation         = null
             tripStartTime        = System.currentTimeMillis()
+            hasAlertedThisCrossing = false
             speedHistory.clear()
             altitudeHistory.clear()
             prefs.resetTripData()
@@ -130,6 +143,7 @@ class SpeedTrackingService : LifecycleService() {
             _maxSpeed.value     = prefs.savedMaxSpeed.first()
             speedSum            = prefs.savedSpeedSum.first()
             speedCount          = prefs.savedSpeedCount.first()
+            currentSpeedLimitThreshold = prefs.speedLimitThreshold.first()
             if (speedCount > 0f) _avgSpeed.value = speedSum / speedCount
             startLocationUpdates()
         }
@@ -148,9 +162,29 @@ class SpeedTrackingService : LifecycleService() {
                 val location = result.lastLocation ?: return
                 val speed = if (location.hasSpeed()) location.speed else 0f
                 val alt   = if (location.hasAltitude()) location.altitude else 0.0
+                val bear  = if (location.hasBearing()) location.bearing else 0f
 
                 _speedMs.value   = speed
                 _altitude.value  = alt
+                _bearing.value   = bear
+
+                if (speed > _maxSpeed.value) _maxSpeed.value = speed
+                if (alt < minAlt) minAlt = alt
+                if (alt > maxAlt) maxAlt = alt
+
+                if (currentSpeedLimitThreshold > 0) {
+                    val speedKmh = speed * 3.6f
+                    if (speedKmh > currentSpeedLimitThreshold) {
+                        if (!hasAlertedThisCrossing) {
+                            hasAlertedThisCrossing = true
+                            _speedLimitAlert.value = true
+                            triggerAlert()
+                        }
+                    } else {
+                        hasAlertedThisCrossing = false
+                        _speedLimitAlert.value = false
+                    }
+                }
 
                 if (speed > _maxSpeed.value) _maxSpeed.value = speed
                 if (alt < minAlt) minAlt = alt
@@ -187,6 +221,7 @@ class SpeedTrackingService : LifecycleService() {
                     putExtra(EXTRA_AVG,      _avgSpeed.value)
                     putExtra(EXTRA_TRIP,     _tripDistance.value.toFloat())
                     putExtra(EXTRA_ALTITUDE, alt.toFloat())
+                    putExtra(EXTRA_BEARING,  bear)
                 })
             }
         }
@@ -206,6 +241,10 @@ class SpeedTrackingService : LifecycleService() {
             .setContentText("Tracking your speed...")
             .setSmallIcon(android.R.drawable.ic_menu_compass)
             .build()
+    }
+
+    private fun triggerAlert() {
+        sendBroadcast(Intent(ACTION_SPEED_LIMIT_ALERT).apply { setPackage(packageName) })
     }
 
     override fun onDestroy() {

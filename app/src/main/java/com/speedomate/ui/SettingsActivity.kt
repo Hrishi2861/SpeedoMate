@@ -28,5 +28,23 @@ class SettingsActivity : AppCompatActivity() {
         binding.toggleUnit.setOnCheckedChangeListener { _, isChecked ->
             vm.setMetric(isChecked)
         }
+
+        lifecycleScope.launch {
+            vm.speedLimitThreshold.collectLatest { threshold ->
+                binding.seekSpeedLimit.progress = threshold
+                binding.tvSpeedLimitValue.text = if (threshold > 0) "$threshold" else "Off"
+            }
+        }
+
+        binding.seekSpeedLimit.setOnSeekBarChangeListener(object :
+            android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    vm.setSpeedLimitThreshold(progress)
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
+        })
     }
 }

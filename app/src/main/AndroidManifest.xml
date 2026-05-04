@@ -7,6 +7,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <uses-permission android:name="android.permission.VIBRATE"/>
 
     <!-- Android Auto feature (not required, just declared) -->
     <uses-feature
@@ -79,6 +80,17 @@
                     android:name="android.appwidget.provider"
                     android:resource="@xml/speed_widget_info"/>
         </receiver>
+
+        <!-- FileProvider for sharing trip images -->
+        <provider
+                android:name="androidx.core.content.FileProvider"
+                android:authorities="com.speedomate.fileprovider"
+                android:exported="false"
+                android:grantUriPermissions="true">
+            <meta-data
+                    android:name="android.support.FILE_PROVIDER_PATHS"
+                    android:resource="@xml/file_paths"/>
+        </provider>
 
         <!-- Large 4x4 Widget -->
         <receiver

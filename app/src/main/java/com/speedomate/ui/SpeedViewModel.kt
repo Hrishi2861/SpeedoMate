@@ -19,6 +19,9 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
     val isMetric: StateFlow<Boolean> = prefs.isMetric
         .stateIn(viewModelScope, SharingStarted.Eagerly, true)
 
+    val speedLimitThreshold: StateFlow<Int> = prefs.speedLimitThreshold
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
     val currentSpeed: Flow<Float> = combine(
         SpeedTrackingService.speedMs, isMetric
     ) { ms, metric -> if (metric) ms * 3.6f else ms * 2.237f }.conflate()
@@ -35,10 +38,31 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
         SpeedTrackingService.tripDistance, isMetric
     ) { km, metric -> if (metric) km else km * 0.621371 }.conflate()
 
-    // Altitude in meters (always metric for altitude)
     val altitude: Flow<Double> = SpeedTrackingService.altitude
 
+    val heading: Flow<Pair<Float, String>> = SpeedTrackingService.bearing
+        .map { bearing ->
+            val cardinal = bearingToCardinal(bearing)
+            bearing to cardinal
+        }.conflate()
+
+    val speedLimitAlert: StateFlow<Boolean> = SpeedTrackingService.speedLimitAlert
+
     val allTrips: Flow<List<TripEntity>> = database.tripDao().getAllTrips()
+
+    private fun bearingToCardinal(bearing: Float): String {
+        return when (bearing) {
+            in 337.5f..360f, in 0f..22.5f -> "N"
+            in 22.5f..67.5f -> "NE"
+            in 67.5f..112.5f -> "E"
+            in 112.5f..157.5f -> "SE"
+            in 157.5f..202.5f -> "S"
+            in 202.5f..247.5f -> "SW"
+            in 247.5f..292.5f -> "W"
+            in 292.5f..337.5f -> "NW"
+            else -> ""
+        }
+    }
 
     fun startService() {
         val intent = Intent(getApplication(), SpeedTrackingService::class.java)
@@ -59,5 +83,9 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setMetric(value: Boolean) {
         viewModelScope.launch { prefs.setMetric(value) }
+    }
+
+    fun setSpeedLimitThreshold(value: Int) {
+        viewModelScope.launch { prefs.setSpeedLimitThreshold(value) }
     }
 }
