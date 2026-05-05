@@ -113,9 +113,9 @@ class SpeedGraphView @JvmOverloads constructor(
 
         val w       = width.toFloat()
         val h       = height.toFloat()
-        val padL    = 80f   // left for speed Y axis labels
-        val padR    = 80f   // right for altitude Y axis labels
-        val padT    = 30f
+        val padL    = 90f   // left for speed Y axis labels + title
+        val padR    = 80f   // right for altitude Y axis labels + title
+        val padT    = 56f   // top for legend labels + breathing room
         val padB    = 36f   // bottom for X axis labels
         val graphW  = w - padL - padR
         val graphH  = h - padT - padB
@@ -238,26 +238,26 @@ class SpeedGraphView @JvmOverloads constructor(
         }
 
         // ── Legend ────────────────────────────────────────────
-        canvas.drawText("─ Speed", padL + 8f, padT + 22f, legendSpeedPaint)
+        canvas.drawText("─ Speed", padL + 8f, padT - 16f, legendSpeedPaint)
         if (hasAlt) {
-            canvas.drawText("- - Altitude", padL + graphW / 2f, padT + 22f, legendAltPaint)
+            canvas.drawText("- - Altitude", padL + graphW / 2f, padT - 16f, legendAltPaint)
         }
 
         // ── Y axis titles ─────────────────────────────────────
         val spdUnit = if (convFactor > 3f) "km/h" else "mph"
         labelPaint.textSize  = 18f
         labelPaint.textAlign = Paint.Align.CENTER
-        // Rotate canvas to draw vertical label
+        // Rotate canvas to draw vertical label on left
         canvas.save()
-        canvas.rotate(-90f, 20f, padT + graphH / 2)
-        canvas.drawText(spdUnit, 20f, padT + graphH / 2, labelPaint)
+        canvas.rotate(-90f, padL - 38f, padT + graphH / 2)
+        canvas.drawText(spdUnit, padL - 38f, padT + graphH / 2, labelPaint)
         canvas.restore()
 
         if (hasAlt) {
             labelRightPaint.textSize  = 18f
             canvas.save()
-            canvas.rotate(90f, w - 20f, padT + graphH / 2)
-            canvas.drawText("m asl", w - 20f, padT + graphH / 2, labelRightPaint)
+            canvas.rotate(90f, w - padR + 38f, padT + graphH / 2)
+            canvas.drawText("m asl", w - padR + 38f, padT + graphH / 2, labelRightPaint)
             canvas.restore()
         }
     }

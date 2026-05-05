@@ -107,11 +107,11 @@ class TripHistoryActivity : AppCompatActivity() {
         else "%.0f mph".format(trip.avgSpeedMs * 2.237f)
         val altInfo = if (trip.maxAltitude > 0) "\n↑ Altitude: ${trip.minAltitude.toInt()}–${trip.maxAltitude.toInt()}m asl" else ""
 
-        return """🚗 SpeedoMate Trip
-🗓 $startStr → $endStr  (${dur}m)
-📍 Distance: $dist
-🏎 Max Speed: $maxSpd
-⌀ Avg Speed: $avgSpd$altInfo
+        return """SpeedoMate Trip
+$startStr → $endStr  (${dur}m)
+Distance: $dist
+Max Speed: $maxSpd
+Avg Speed: $avgSpd$altInfo
 
 Shared via SpeedoMate — https://github.com/Hrishi2861/SpeedoMate"""
     }
@@ -335,38 +335,80 @@ class TripAdapter(
             // Date + share + delete row
             val headerRow = LinearLayout(card.context).apply {
                 orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+            }
+            val calendarIcon = androidx.appcompat.widget.AppCompatImageView(card.context).apply {
+                setImageResource(R.drawable.ic_calendar)
+                layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT
+                ).apply { setMargins(0, 0, 6, 0) }
             }
             val dateText = TextView(card.context).apply {
-                text = "🗓 $startStr → $endStr  (${dur}m)"
+                text = "$startStr → $endStr  (${dur}m)"
                 textSize = 13f
                 setTextColor(android.graphics.Color.parseColor("#00E5FF"))
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
-            val shareBtn = Button(card.context).apply {
-                text = "📤"
-                textSize = 14f
+            val shareBtn = androidx.appcompat.widget.AppCompatImageButton(card.context).apply {
+                setImageResource(R.drawable.ic_share)
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                setTextColor(android.graphics.Color.parseColor("#00E5FF"))
+                layoutParams = LinearLayout.LayoutParams(
+                    64, 64
+                )
                 setOnClickListener { onShare(trip) }
             }
-            val deleteBtn = Button(card.context).apply {
-                text = "🗑"
-                textSize = 14f
+            val deleteBtn = androidx.appcompat.widget.AppCompatImageButton(card.context).apply {
+                setImageResource(R.drawable.ic_delete)
                 setBackgroundColor(android.graphics.Color.TRANSPARENT)
-                setTextColor(android.graphics.Color.parseColor("#FF4444"))
+                layoutParams = LinearLayout.LayoutParams(
+                    64, 64
+                )
                 setOnClickListener { onDelete(trip) }
             }
+            headerRow.addView(calendarIcon)
             headerRow.addView(dateText)
             headerRow.addView(shareBtn)
             headerRow.addView(deleteBtn)
 
-            // Stats & Alt row
+            // Stats row with icons
+            val statsRow = LinearLayout(card.context).apply {
+                orientation = LinearLayout.HORIZONTAL
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                setPadding(0, 8, 0, 0)
+            }
+
+            fun makeStatIcon(iconRes: Int, text: String) = TextView(card.context).apply {
+                val icon = androidx.core.content.ContextCompat.getDrawable(card.context, iconRes)
+                val iconSize = (20 * card.context.resources.displayMetrics.density).toInt()
+                icon?.setBounds(0, 0, iconSize, iconSize)
+                setCompoundDrawables(icon, null, null, null)
+                compoundDrawablePadding = 6
+                gravity = android.view.Gravity.CENTER_VERTICAL
+                this.text = text
+                textSize = 12f
+                setTextColor(android.graphics.Color.parseColor("#AAAAAA"))
+                maxLines = 1
+                ellipsize = android.text.TextUtils.TruncateAt.END
+            }
+
             val altRange = if (trip.maxAltitude > 0)
-                "  ↑ ${trip.minAltitude.toInt()}–${trip.maxAltitude.toInt()}m"
+                " ${trip.minAltitude.toInt()}–${trip.maxAltitude.toInt()}m"
             else ""
 
-            val statsText = TextView(card.context).apply {
-                text = "📍 $dist   🏎 Max: $maxSpd   ⌀ Avg: $avgSpd$altRange"
+            val distIcon = makeStatIcon(R.drawable.ic_pin, dist)
+            val maxIcon = makeStatIcon(R.drawable.ic_car, "Max: $maxSpd")
+            val avgIcon = makeStatIcon(R.drawable.ic_average, "Avg: $avgSpd")
+
+            listOf(distIcon, maxIcon, avgIcon).forEach { view ->
+                view.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                statsRow.addView(view)
+            }
+
+            if (trip.maxAltitude > 0) {
+                val altIcon = makeStatIcon(R.drawable.ic_altitude, altRange.trim())
+                altIcon.layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
+                statsRow.addView(altIcon)
             }
 
             // Speed graph
@@ -390,7 +432,7 @@ class TripAdapter(
             }
 
             container.addView(headerRow)
-            container.addView(statsText)
+            container.addView(statsRow)
             container.addView(graphView)
             card.addView(container)
         }
