@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Shadow layer -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp"/>
+            <solid android:color="#20000000"/>
+        </shape>
+    </item>
+    <!-- Main semi-transparent background -->
+    <item android:top="3dp">
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp"/>
+            <solid android:color="#CC151515"/>
+        </shape>
+    </item>
+    <!-- Top accent line -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:topLeftRadius="20dp" android:topRightRadius="20dp"
+                android:bottomLeftRadius="0dp" android:bottomRightRadius="0dp"/>
+            <size android:height="3dp"/>
+            <gradient
+                android:angle="0"
+                android:startColor="#00E5FF"
+                android:centerColor="#00B4D8"
+                android:endColor="#00E5FF"/>
+        </shape>
+    </item>
+    <!-- Subtle gradient overlay for depth -->
+    <item>
+        <shape android:shape="rectangle">
+            <corners android:radius="20dp"/>
+            <gradient
+                android:angle="270"
+                android:startColor="#1AFFFFFF"
+                android:endColor="#00FFFFFF"/>
+        </shape>
+    </item>
+</layer-list>

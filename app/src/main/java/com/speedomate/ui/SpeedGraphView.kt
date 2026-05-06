@@ -14,7 +14,7 @@ class SpeedGraphView @JvmOverloads constructor(
     private var convFactor     = 3.6f
     private var durationMillis = 0L
 
-    // Speed line — cyan
+    // Speed line — cyan (default, updated via accentColor)
     private val speedLinePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color       = Color.parseColor("#00E5FF")
         strokeWidth = 3f
@@ -54,7 +54,7 @@ class SpeedGraphView @JvmOverloads constructor(
 
     // Labels
     private val labelPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
-        color     = Color.parseColor("#555555")
+        color     = Color.parseColor("#00E5FF")
         textSize  = 22f
         textAlign = Paint.Align.RIGHT
         typeface  = Typeface.MONOSPACE
@@ -92,6 +92,14 @@ class SpeedGraphView @JvmOverloads constructor(
         durationMillis = durationMs
         invalidate()
     }
+
+    var accentColor = Color.parseColor("#00E5FF")
+        set(value) {
+            field = value
+            speedLinePaint.color = value
+            labelPaint.color = value
+            invalidate()
+        }
 
     // Keep backward compat
     fun setSpeedPoints(speeds: List<Float>, factor: Float) {
@@ -228,8 +236,8 @@ class SpeedGraphView @JvmOverloads constructor(
 
             val speedShader = LinearGradient(
                 0f, padT, 0f, padT + graphH,
-                Color.parseColor("#5500E5FF"),
-                Color.parseColor("#0000E5FF"),
+                accentColor and 0x00FFFFFF or (0x55000000.toInt()),
+                accentColor and 0x00FFFFFF,
                 Shader.TileMode.CLAMP
             )
             speedFillPaint.shader = speedShader
@@ -238,6 +246,7 @@ class SpeedGraphView @JvmOverloads constructor(
         }
 
         // ── Legend ────────────────────────────────────────────
+        legendSpeedPaint.color = accentColor
         canvas.drawText("─ Speed", padL + 8f, padT - 16f, legendSpeedPaint)
         if (hasAlt) {
             canvas.drawText("- - Altitude", padL + graphW / 2f, padT - 16f, legendAltPaint)
@@ -247,17 +256,19 @@ class SpeedGraphView @JvmOverloads constructor(
         val spdUnit = if (convFactor > 3f) "km/h" else "mph"
         labelPaint.textSize  = 18f
         labelPaint.textAlign = Paint.Align.CENTER
+        val centerY = padT + graphH / 2
         // Rotate canvas to draw vertical label on left
         canvas.save()
-        canvas.rotate(-90f, padL - 38f, padT + graphH / 2)
-        canvas.drawText(spdUnit, padL - 38f, padT + graphH / 2, labelPaint)
+        canvas.rotate(-90f, padL - 52f, centerY)
+        canvas.drawText(spdUnit, padL - 52f, centerY, labelPaint)
         canvas.restore()
 
         if (hasAlt) {
             labelRightPaint.textSize  = 18f
+            labelRightPaint.textAlign = Paint.Align.CENTER
             canvas.save()
-            canvas.rotate(90f, w - padR + 38f, padT + graphH / 2)
-            canvas.drawText("m asl", w - padR + 38f, padT + graphH / 2, labelRightPaint)
+            canvas.rotate(90f, w - padR + 52f, centerY)
+            canvas.drawText("m asl", w - padR + 52f, centerY, labelRightPaint)
             canvas.restore()
         }
     }

@@ -32,7 +32,19 @@ class SpeedometerView @JvmOverloads constructor(
         set(value) { field = value; invalidate() }
 
     var speedLimitThreshold = 0f
-        set(value) { field = value; invalidate() }
+        set(value) { field = value.coerceAtMost(maxDisplaySpeed); invalidate() }
+
+    var accentColor = Color.parseColor("#00E5FF")
+        set(value) {
+            field = value
+            arcFillPaint.color = value
+            needlePaint.color = value
+            needleGlowPaint.color = (value and 0x00FFFFFF) or (0x88000000.toInt())
+            centerDotPaint.color = value
+            unitTextPaint.color = value
+            compassArrowPaint.color = value
+            invalidate()
+        }
 
     // Animators
     private var needleAnimator: ValueAnimator? = null
@@ -196,7 +208,7 @@ class SpeedometerView @JvmOverloads constructor(
         needleAnimator?.cancel()
         numberAnimator?.cancel()
 
-        val isInDangerZone = if (speedLimitThreshold > 0f) clampedSpeed > speedLimitThreshold else clampedSpeed > maxDisplaySpeed * 0.8f
+        val isInDangerZone = speedLimitThreshold > 0f && clampedSpeed > speedLimitThreshold
         if (isInDangerZone) startDangerFlicker() else stopDangerFlicker()
 
         // Needle with overshoot interpolator
@@ -298,38 +310,44 @@ class SpeedometerView @JvmOverloads constructor(
         arcBgPaint.strokeWidth = arcStroke
         canvas.drawArc(arcRect, startAngle, sweepAngle, false, arcBgPaint)
 
-        // Danger zone arc with flicker
-        val dangerFraction = if (speedLimitThreshold > 0f) speedLimitThreshold / maxDisplaySpeed else 0.8f
-        val dangerStart = startAngle + sweepAngle * dangerFraction
-        val dangerSweep = sweepAngle * (1f - dangerFraction)
-        dangerArcPaint.strokeWidth = arcStroke
-        dangerArcPaint.alpha = (255 * dangerFlicker).toInt()
-        canvas.drawArc(arcRect, dangerStart, dangerSweep, false, dangerArcPaint)
-        dangerArcPaint.alpha = 255
+        // Danger zone arc with flicker (only when speed limit is set)
+        if (speedLimitThreshold > 0f) {
+            val dangerFraction = speedLimitThreshold / maxDisplaySpeed
+            val dangerStart = startAngle + sweepAngle * dangerFraction
+            val dangerSweep = sweepAngle * (1f - dangerFraction)
+            dangerArcPaint.strokeWidth = arcStroke
+            dangerArcPaint.alpha = (255 * dangerFlicker).toInt()
+            canvas.drawArc(arcRect, dangerStart, dangerSweep, false, dangerArcPaint)
+            dangerArcPaint.alpha = 255
+        }
 
         // Speed fill arc
         val speedFraction = displayedSpeed / maxDisplaySpeed
         val fillSweep = (sweepAngle * speedFraction).coerceAtLeast(0f)
-        val isInDangerZone = if (speedLimitThreshold > 0f) displayedSpeed > speedLimitThreshold else displayedSpeed > maxDisplaySpeed * 0.8f
+        val isInDangerZone = speedLimitThreshold > 0f && displayedSpeed > speedLimitThreshold
 
         if (fillSweep > 0f) {
             val isRed = speedLimitExceeded || isInDangerZone
 
             // Glow layer
             arcGlowPaint.strokeWidth = arcStroke * 2.5f
-            arcGlowPaint.color = Color.argb(
-                (255 * glowAlpha * 0.6f).toInt(),
-                if (isRed) 255 else 0,
-                if (isRed) 61 else 229,
-                if (isRed) 61 else 255
-            )
+            arcGlowPaint.color = if (isRed) {
+                Color.argb((255 * glowAlpha * 0.6f).toInt(), 255, 61, 61)
+            } else {
+                Color.argb(
+                    (255 * glowAlpha * 0.6f).toInt(),
+                    (accentColor shr 16) and 0xFF,
+                    (accentColor shr 8) and 0xFF,
+                    accentColor and 0xFF
+                )
+            }
             arcGlowPaint.maskFilter = BlurMaskFilter(arcStroke * 1.5f, BlurMaskFilter.Blur.NORMAL)
             canvas.drawArc(arcRect, startAngle, fillSweep, false, arcGlowPaint)
 
             // Main arc
             arcFillPaint.strokeWidth = arcStroke
             arcFillPaint.maskFilter = null
-            arcFillPaint.color = if (isRed) Color.parseColor("#FF3D3D") else Color.parseColor("#00E5FF")
+            arcFillPaint.color = if (isRed) Color.parseColor("#FF3D3D") else accentColor
             canvas.drawArc(arcRect, startAngle, fillSweep, false, arcFillPaint)
         }
 
@@ -369,7 +387,7 @@ class SpeedometerView @JvmOverloads constructor(
         val nx = cos(needleAngle).toFloat()
         val ny = sin(needleAngle).toFloat()
 
-        val needleColor = if (speedLimitExceeded) Color.parseColor("#FF3D3D") else Color.parseColor("#00E5FF")
+        val needleColor = if (speedLimitExceeded) Color.parseColor("#FF3D3D") else accentColor
 
         needleGlowPaint.strokeWidth = radius * 0.05f
         needleGlowPaint.alpha = (255 * glowAlpha).toInt()

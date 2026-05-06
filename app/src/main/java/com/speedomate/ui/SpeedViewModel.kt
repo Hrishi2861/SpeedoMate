@@ -2,6 +2,7 @@ package com.speedomate.ui
 
 import android.app.Application
 import android.content.Intent
+import android.graphics.Color
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.speedomate.data.PrefsManager
@@ -10,6 +11,7 @@ import com.speedomate.data.TripEntity
 import com.speedomate.service.SpeedTrackingService
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import kotlin.math.roundToInt
 
 class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
@@ -21,6 +23,20 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
     val speedLimitThreshold: StateFlow<Int> = prefs.speedLimitThreshold
         .stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    val displayedSpeedLimit: Flow<Int> = combine(
+        prefs.speedLimitThreshold, isMetric
+    ) { storedKm, metric ->
+        if (storedKm <= 0) 0
+        else if (metric) storedKm
+        else (storedKm * 0.621371).roundToInt().coerceAtMost(120)
+    }.stateIn(viewModelScope, SharingStarted.Eagerly, 0)
+
+    val accentColor: StateFlow<Int> = prefs.accentColorInt
+        .stateIn(viewModelScope, SharingStarted.Eagerly, Color.parseColor("#00E5FF"))
+
+    val accentColorHex: StateFlow<String> = prefs.accentColor
+        .stateIn(viewModelScope, SharingStarted.Eagerly, "#00E5FF")
 
     val currentSpeed: Flow<Float> = combine(
         SpeedTrackingService.speedMs, isMetric
@@ -87,5 +103,9 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setSpeedLimitThreshold(value: Int) {
         viewModelScope.launch { prefs.setSpeedLimitThreshold(value) }
+    }
+
+    fun setAccentColor(value: String) {
+        viewModelScope.launch { prefs.setAccentColor(value) }
     }
 }

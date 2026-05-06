@@ -63,7 +63,8 @@ class TripHistoryActivity : AppCompatActivity() {
                     .show()
             },
             onShare = { trip -> shareTrip(trip) },
-            isMetric = vm.isMetric.value
+            isMetric = vm.isMetric.value,
+            accentHex = vm.accentColorHex.value
         )
         recycler.adapter = adapter
 
@@ -79,10 +80,17 @@ class TripHistoryActivity : AppCompatActivity() {
         }
     }
 
+    override fun onBackPressed() {
+        super.onBackPressed()
+        overridePendingTransition(0, R.anim.slide_down)
+    }
+
     private fun shareTrip(trip: TripEntity) {
         val isMetric = vm.isMetric.value
+        val accentHex = vm.accentColorHex.value
+        val accentColor = android.graphics.Color.parseColor(accentHex)
         val text = buildTripText(trip, isMetric)
-        val bitmap = buildTripImage(trip, isMetric)
+        val bitmap = buildTripImage(trip, isMetric, accentColor)
         val uri = saveBitmapToCache(bitmap)
 
         val intent = Intent(Intent.ACTION_SEND).apply {
@@ -116,14 +124,14 @@ Avg Speed: $avgSpd$altInfo
 Shared via SpeedoMate — https://github.com/Hrishi2861/SpeedoMate"""
     }
 
-    private fun buildTripImage(trip: TripEntity, isMetric: Boolean): Bitmap {
+    private fun buildTripImage(trip: TripEntity, isMetric: Boolean, accentColor: Int): Bitmap {
         val width = 1080
         val padding = 48f
         val contentWidth = width - padding * 2
 
         // Paints
         val bgPaint = Paint().apply { color = Color.parseColor("#0A0A0A") }
-        val accentPaint = Paint().apply { color = Color.parseColor("#00E5FF") }
+        val accentPaint = Paint().apply { color = accentColor }
         val dividerPaint = Paint().apply { color = Color.parseColor("#333333"); strokeWidth = 2f }
         val titlePaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             color = Color.WHITE; textSize = 56f; typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
@@ -278,7 +286,8 @@ Shared via SpeedoMate — https://github.com/Hrishi2861/SpeedoMate"""
 class TripAdapter(
     private val onDelete: (TripEntity) -> Unit,
     private val onShare: (TripEntity) -> Unit,
-    private val isMetric: Boolean
+    private val isMetric: Boolean,
+    private val accentHex: String
 ) : RecyclerView.Adapter<TripAdapter.TripViewHolder>() {
 
     private var trips = listOf<TripEntity>()
@@ -298,7 +307,7 @@ class TripAdapter(
             setCardBackgroundColor(android.graphics.Color.parseColor("#111111"))
             cardElevation = 0f
         }
-        return TripViewHolder(card, onDelete, onShare, isMetric)
+        return TripViewHolder(card, onDelete, onShare, isMetric, accentHex)
     }
 
     override fun onBindViewHolder(holder: TripViewHolder, position: Int) {
@@ -311,7 +320,8 @@ class TripAdapter(
         private val card: androidx.cardview.widget.CardView,
         private val onDelete: (TripEntity) -> Unit,
         private val onShare: (TripEntity) -> Unit,
-        private val isMetric: Boolean
+        private val isMetric: Boolean,
+        private val accentHex: String
     ) : RecyclerView.ViewHolder(card) {
 
         fun bind(trip: TripEntity) {
@@ -347,7 +357,7 @@ class TripAdapter(
             val dateText = TextView(card.context).apply {
                 text = "$startStr → $endStr  (${dur}m)"
                 textSize = 13f
-                setTextColor(android.graphics.Color.parseColor("#00E5FF"))
+                setTextColor(android.graphics.Color.parseColor(accentHex))
                 layoutParams = LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f)
             }
             val shareBtn = androidx.appcompat.widget.AppCompatImageButton(card.context).apply {

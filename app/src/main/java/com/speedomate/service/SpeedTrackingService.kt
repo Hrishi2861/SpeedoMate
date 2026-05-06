@@ -145,6 +145,13 @@ class SpeedTrackingService : LifecycleService() {
             speedCount          = prefs.savedSpeedCount.first()
             currentSpeedLimitThreshold = prefs.speedLimitThreshold.first()
             if (speedCount > 0f) _avgSpeed.value = speedSum / speedCount
+
+            lifecycleScope.launch {
+                prefs.speedLimitThreshold.collect { threshold ->
+                    currentSpeedLimitThreshold = threshold
+                }
+            }
+
             startLocationUpdates()
         }
     }

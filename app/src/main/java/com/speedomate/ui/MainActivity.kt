@@ -1,11 +1,14 @@
 package com.speedomate.ui
 
 import android.Manifest
+import android.animation.ValueAnimator
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
 import android.content.pm.PackageManager
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.hardware.Sensor
 import android.hardware.SensorEvent
 import android.hardware.SensorEventListener
@@ -20,6 +23,7 @@ import android.os.Looper
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.provider.Settings
+import android.view.animation.AccelerateDecelerateInterpolator
 import android.widget.Toast
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.activity.viewModels
@@ -27,7 +31,9 @@ import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.content.ContextCompat
 import androidx.core.content.ContextCompat.RECEIVER_NOT_EXPORTED
+import androidx.core.graphics.ColorUtils
 import androidx.lifecycle.lifecycleScope
+import com.speedomate.R
 import com.speedomate.databinding.ActivityMainBinding
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -40,6 +46,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var vibrator: Vibrator
     private var rotationSensor: Sensor? = null
     private val alertHandler = Handler(Looper.getMainLooper())
+    private var displayedMaxSpeed = 0f
+    private var displayedAvgSpeed = 0f
+    private var displayedTripDist = 0.0
 
     private val alertReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context?, intent: Intent?) {
@@ -128,10 +137,12 @@ class MainActivity : AppCompatActivity() {
 
         binding.btnSettings.setOnClickListener {
             startActivity(Intent(this, SettingsActivity::class.java))
+            overridePendingTransition(R.anim.fade_in, R.anim.fade_out)
         }
 
         binding.btnTripHistory.setOnClickListener {
             startActivity(Intent(this, TripHistoryActivity::class.java))
+            overridePendingTransition(R.anim.slide_up, R.anim.fade_out)
         }
     }
 
@@ -266,22 +277,68 @@ class MainActivity : AppCompatActivity() {
             }
         }
         lifecycleScope.launch {
-            vm.speedLimitThreshold.collectLatest { threshold ->
-                val metric = vm.isMetric.value
+            vm.displayedSpeedLimit.collectLatest { threshold ->
                 binding.speedometerView.speedLimitThreshold = threshold.toFloat()
+            }
+        }
+        lifecycleScope.launch {
+            vm.accentColor.collectLatest { color ->
+                val hex = String.format("#%06X", 0xFFFFFF and color)
+                binding.speedometerView.accentColor = color
+
+                binding.btnResetTrip.setTextColor(color)
+                val saveIcon = binding.btnResetTrip.compoundDrawablesRelative.firstOrNull { it != null }
+                saveIcon?.setTint(color)
+
+                val cardInner = binding.statsCard.getChildAt(0)
+                (cardInner?.background as? android.graphics.drawable.LayerDrawable)?.let { ld ->
+                    ld.getDrawable(1)?.let { mainBg ->
+                        if (mainBg is android.graphics.drawable.GradientDrawable) {
+                            val alpha = (255 * 0.15f).toInt()
+                            val tinted = android.graphics.Color.argb(alpha,
+                                android.graphics.Color.red(color),
+                                android.graphics.Color.green(color),
+                                android.graphics.Color.blue(color))
+                            mainBg.setColor(tinted)
+                        }
+                    }
+                    ld.getDrawable(2)?.let { accentLine ->
+                        if (accentLine is android.graphics.drawable.GradientDrawable) {
+                            accentLine.setColor(color)
+                        }
+                    }
+                    cardInner.invalidate()
+                }
+
+                binding.speedometerView.invalidate()
             }
         }
         lifecycleScope.launch {
             vm.currentSpeed.collectLatest { binding.speedometerView.setSpeed(it) }
         }
         lifecycleScope.launch {
-            vm.maxSpeed.collectLatest { binding.tvMaxSpeed.text = "%.0f".format(it) }
+            vm.maxSpeed.collectLatest { target ->
+                animateFloat(displayedMaxSpeed, target) { value ->
+                    displayedMaxSpeed = value
+                    binding.tvMaxSpeed.text = "%.0f".format(value)
+                }
+            }
         }
         lifecycleScope.launch {
-            vm.avgSpeed.collectLatest { binding.tvAvgSpeed.text = "%.0f".format(it) }
+            vm.avgSpeed.collectLatest { target ->
+                animateFloat(displayedAvgSpeed, target) { value ->
+                    displayedAvgSpeed = value
+                    binding.tvAvgSpeed.text = "%.0f".format(value)
+                }
+            }
         }
         lifecycleScope.launch {
-            vm.tripDistance.collectLatest { binding.tvTrip.text = "%.2f".format(it) }
+            vm.tripDistance.collectLatest { target ->
+                animateDouble(displayedTripDist, target) { value ->
+                    displayedTripDist = value
+                    binding.tvTrip.text = "%.2f".format(value)
+                }
+            }
         }
     }
 
@@ -308,6 +365,26 @@ class MainActivity : AppCompatActivity() {
         val toneGen = ToneGenerator(AudioManager.STREAM_MUSIC, 100)
         toneGen.startTone(ToneGenerator.TONE_CDMA_HIGH_L, 200)
         alertHandler.postDelayed({ toneGen.release() }, 300)
+    }
+
+    private fun animateFloat(from: Float, to: Float, onUpdate: (Float) -> Unit) {
+        if (from == to) return
+        ValueAnimator.ofFloat(from, to).apply {
+            duration = 300
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { onUpdate(it.animatedValue as Float) }
+            start()
+        }
+    }
+
+    private fun animateDouble(from: Double, to: Double, onUpdate: (Double) -> Unit) {
+        if (from == to) return
+        ValueAnimator.ofFloat(from.toFloat(), to.toFloat()).apply {
+            duration = 300
+            interpolator = AccelerateDecelerateInterpolator()
+            addUpdateListener { onUpdate((it.animatedValue as Float).toDouble()) }
+            start()
+        }
     }
 
     override fun onDestroy() {

@@ -1,25 +1,40 @@
 package com.speedomate.data
 
 import android.content.Context
+import android.graphics.Color
+import androidx.annotation.ColorInt
 import androidx.datastore.preferences.core.booleanPreferencesKey
 import androidx.datastore.preferences.core.doublePreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.floatPreferencesKey
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 private val Context.dataStore by preferencesDataStore("speedomate_prefs")
 
+object ThemeColors {
+    val PRESET_COLORS = listOf(
+        "#00E5FF" to "Cyan",
+        "#39FF14" to "Neon Green",
+        "#FF8C00" to "Amber",
+        "#FF2D78" to "Hot Pink",
+        "#C6F135" to "Lime",
+        "#FFD700" to "Gold",
+    )
+}
+
 class PrefsManager(private val context: Context) {
     companion object {
-        val KEY_METRIC      = booleanPreferencesKey("is_metric")
-        val KEY_TRIP_DIST   = doublePreferencesKey("trip_distance")
-        val KEY_MAX_SPEED   = floatPreferencesKey("max_speed")
-        val KEY_SPEED_SUM   = floatPreferencesKey("speed_sum")
-        val KEY_SPEED_COUNT = floatPreferencesKey("speed_count")
-        val KEY_SPEED_LIMIT = intPreferencesKey("speed_limit_threshold")
+        val KEY_METRIC       = booleanPreferencesKey("is_metric")
+        val KEY_TRIP_DIST    = doublePreferencesKey("trip_distance")
+        val KEY_MAX_SPEED    = floatPreferencesKey("max_speed")
+        val KEY_SPEED_SUM    = floatPreferencesKey("speed_sum")
+        val KEY_SPEED_COUNT  = floatPreferencesKey("speed_count")
+        val KEY_SPEED_LIMIT  = intPreferencesKey("speed_limit_threshold")
+        val KEY_ACCENT_COLOR = stringPreferencesKey("accent_color")
     }
 
     val isMetric: Flow<Boolean> = context.dataStore.data
@@ -27,6 +42,11 @@ class PrefsManager(private val context: Context) {
 
     val speedLimitThreshold: Flow<Int> = context.dataStore.data
         .map { it[KEY_SPEED_LIMIT] ?: 0 }
+
+    val accentColor: Flow<String> = context.dataStore.data
+        .map { it[KEY_ACCENT_COLOR] ?: "#00E5FF" }
+
+    val accentColorInt: Flow<Int> = accentColor.map { Color.parseColor(it) }
 
     val savedTripDistance: Flow<Double> = context.dataStore.data
         .map { it[KEY_TRIP_DIST] ?: 0.0 }
@@ -46,6 +66,10 @@ class PrefsManager(private val context: Context) {
 
     suspend fun setSpeedLimitThreshold(value: Int) {
         context.dataStore.edit { it[KEY_SPEED_LIMIT] = value }
+    }
+
+    suspend fun setAccentColor(value: String) {
+        context.dataStore.edit { it[KEY_ACCENT_COLOR] = value }
     }
 
     suspend fun saveTripData(
