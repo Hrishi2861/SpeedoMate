@@ -2,7 +2,7 @@
 
 All notable changes to SpeedoMate will be documented in this file.
 
-## [Unreleased]
+## [v1.5]
 
 ### ✨ Added
 - **Custom Themes** — 7 preset accent colors (Cyan, Electric Blue, Neon Green, Amber, Hot Pink, Lime, Gold) + auto-detected Monet wallpaper color on Android 12+
