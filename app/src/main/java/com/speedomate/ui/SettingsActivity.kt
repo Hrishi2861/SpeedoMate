@@ -22,6 +22,7 @@ import com.speedomate.R
 import com.speedomate.data.ThemeColors
 import com.speedomate.databinding.ActivitySettingsBinding
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.launch
 import kotlin.math.roundToInt
 
@@ -52,11 +53,18 @@ class SettingsActivity : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            vm.displayedSpeedLimit.collectLatest { threshold ->
+            combine(vm.displayedSpeedLimit, vm.accentColorHex) { threshold, accentHex ->
+                threshold to accentHex
+            }.collectLatest { (threshold, accentHex) ->
                 binding.seekSpeedLimit.progress = threshold
                 binding.tvSpeedLimitValue.text = if (threshold > 0) "$threshold" else "Off"
-                val bgRes = if (threshold > 0) R.drawable.limit_badge_bg else R.drawable.limit_badge_bg_off
-                binding.tvSpeedLimitValue.background = ContextCompat.getDrawable(this@SettingsActivity, bgRes)
+                val color = if (threshold > 0) Color.parseColor(accentHex) else Color.parseColor("#333333")
+                val badgeDrawable = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(color)
+                    cornerRadius = 12f * resources.displayMetrics.density
+                }
+                binding.tvSpeedLimitValue.background = badgeDrawable
                 val textColor = if (threshold > 0) "#0D0D0D" else "#888888"
                 binding.tvSpeedLimitValue.setTextColor(Color.parseColor(textColor))
             }
@@ -75,6 +83,8 @@ class SettingsActivity : AppCompatActivity() {
             override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
         })
 
+        setupAutoSave()
+        setupAndroidAuto()
         setupThemePicker()
         applyAccentColor()
         setupCustomScrollbar()
@@ -84,7 +94,53 @@ class SettingsActivity : AppCompatActivity() {
             binding.swatchScrollView.smoothScrollBy(scrollAmount, 0)
         }
     }
-    
+
+    private fun setupAutoSave() {
+        lifecycleScope.launch {
+            vm.autoSaveEnabled.collectLatest { enabled ->
+                binding.toggleAutoSave.isChecked = enabled
+                binding.idleMinutesSection.visibility = if (enabled) View.VISIBLE else View.GONE
+            }
+        }
+
+        lifecycleScope.launch {
+            vm.autoSaveIdleMinutes.collectLatest { minutes ->
+                val progress = (minutes - 5) / 5
+                binding.seekIdleMinutes.progress = progress
+                binding.tvIdleMinutesValue.text = "$minutes min"
+            }
+        }
+
+        binding.toggleAutoSave.setOnCheckedChangeListener { _, isChecked ->
+            vm.setAutoSaveEnabled(isChecked)
+        }
+
+        binding.seekIdleMinutes.setOnSeekBarChangeListener(object :
+            android.widget.SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: android.widget.SeekBar?, progress: Int, fromUser: Boolean) {
+                if (fromUser) {
+                    val minutes = (progress + 1) * 5
+                    binding.tvIdleMinutesValue.text = "$minutes min"
+                    vm.setAutoSaveIdleMinutes(minutes)
+                }
+            }
+            override fun onStartTrackingTouch(seekBar: android.widget.SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: android.widget.SeekBar?) {}
+        })
+    }
+
+    private fun setupAndroidAuto() {
+        lifecycleScope.launch {
+            vm.autoStartAndroidAuto.collectLatest { enabled ->
+                binding.toggleAndroidAuto.isChecked = enabled
+            }
+        }
+
+        binding.toggleAndroidAuto.setOnCheckedChangeListener { _, isChecked ->
+            vm.setAutoStartAndroidAuto(isChecked)
+        }
+    }
+
     private fun setupCustomScrollbar() {
         val scrollView = binding.swatchScrollView
         val scrollbar = binding.customScrollbar
@@ -115,14 +171,6 @@ class SettingsActivity : AppCompatActivity() {
                 binding.ivSettingsIcon.setColorFilter(color)
                 binding.topAccentBar.setBackgroundColor(color)
 
-                binding.tvSpeedLimitValue.setTextColor(Color.parseColor("#0D0D0D"))
-                val badgeDrawable = GradientDrawable().apply {
-                    shape = GradientDrawable.RECTANGLE
-                    setColor(color)
-                    cornerRadius = 12f * resources.displayMetrics.density
-                }
-                binding.tvSpeedLimitValue.background = badgeDrawable
-
                 binding.toggleUnit.setTextColor(color)
                 try {
                     val trackDrawable = binding.toggleUnit.trackDrawable
@@ -149,6 +197,46 @@ class SettingsActivity : AppCompatActivity() {
                 seekLayer.setId(1, android.R.id.progress)
                 binding.seekSpeedLimit.progressDrawable = seekLayer
                 binding.seekSpeedLimit.thumb?.setTint(Color.WHITE)
+
+                binding.toggleAutoSave.setTextColor(color)
+                try {
+                    val autoTrackDrawable = binding.toggleAutoSave.trackDrawable
+                    autoTrackDrawable?.setTintList(android.content.res.ColorStateList.valueOf(ColorUtils.setAlphaComponent(color, 128)))
+                } catch (_: Exception) {}
+
+                val idleSeekBg = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(Color.parseColor("#1E1E1E"))
+                    cornerRadius = 24f
+                }
+                val idleSeekProgress = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(color)
+                    cornerRadius = 24f
+                }
+                val idleSeekLayer = android.graphics.drawable.LayerDrawable(
+                    arrayOf(
+                        android.graphics.drawable.ClipDrawable(idleSeekBg, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL).apply { level = 10000 },
+                        android.graphics.drawable.ClipDrawable(idleSeekProgress, Gravity.START, android.graphics.drawable.ClipDrawable.HORIZONTAL)
+                    )
+                )
+                idleSeekLayer.setId(0, android.R.id.background)
+                idleSeekLayer.setId(1, android.R.id.progress)
+                binding.seekIdleMinutes.progressDrawable = idleSeekLayer
+                binding.seekIdleMinutes.thumb?.setTint(Color.WHITE)
+
+                val idleBadgeDrawable = GradientDrawable().apply {
+                    shape = GradientDrawable.RECTANGLE
+                    setColor(color)
+                    cornerRadius = 12f * resources.displayMetrics.density
+                }
+                binding.tvIdleMinutesValue.background = idleBadgeDrawable
+
+                binding.toggleAndroidAuto.setTextColor(color)
+                try {
+                    val aaTrackDrawable = binding.toggleAndroidAuto.trackDrawable
+                    aaTrackDrawable?.setTintList(android.content.res.ColorStateList.valueOf(ColorUtils.setAlphaComponent(color, 128)))
+                } catch (_: Exception) {}
 
                 val themeDrawable = ContextCompat.getDrawable(this@SettingsActivity, R.drawable.ic_palette)?.mutate()
                 themeDrawable?.setTint(color)

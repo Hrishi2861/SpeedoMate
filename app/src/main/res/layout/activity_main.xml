@@ -80,15 +80,32 @@
                                 android:textStyle="bold"/>
                     </LinearLayout>
 
-                    <TextView
-                            android:id="@+id/tvMaxSpeed"
+                    <FrameLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="28sp"
-                            android:textColor="#FFFFFF"
-                            android:fontFamily="monospace"
-                            android:layout_marginTop="4dp"/>
+                            android:layout_marginTop="4dp">
+
+                        <TextView
+                                android:id="@+id/tvMaxSpeedGhost"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="8"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:alpha="0.12"
+                                android:gravity="center"/>
+
+                        <TextView
+                                android:id="@+id/tvMaxSpeed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:gravity="center"/>
+                    </FrameLayout>
 
                     <TextView
                             android:id="@+id/tvMaxUnit"
@@ -146,15 +163,32 @@
                                 android:textStyle="bold"/>
                     </LinearLayout>
 
-                    <TextView
-                            android:id="@+id/tvAvgSpeed"
+                    <FrameLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="28sp"
-                            android:textColor="#FFFFFF"
-                            android:fontFamily="monospace"
-                            android:layout_marginTop="4dp"/>
+                            android:layout_marginTop="4dp">
+
+                        <TextView
+                                android:id="@+id/tvAvgSpeedGhost"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="8"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:alpha="0.12"
+                                android:gravity="center"/>
+
+                        <TextView
+                                android:id="@+id/tvAvgSpeed"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:gravity="center"/>
+                    </FrameLayout>
 
                     <TextView
                             android:id="@+id/tvAvgUnit"
@@ -212,15 +246,32 @@
                                 android:textStyle="bold"/>
                     </LinearLayout>
 
-                    <TextView
-                            android:id="@+id/tvTrip"
+                    <FrameLayout
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
-                            android:text="0.00"
-                            android:textSize="28sp"
-                            android:textColor="#FFFFFF"
-                            android:fontFamily="monospace"
-                            android:layout_marginTop="4dp"/>
+                            android:layout_marginTop="4dp">
+
+                        <TextView
+                                android:id="@+id/tvTripGhost"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="8.88"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:alpha="0.12"
+                                android:gravity="center"/>
+
+                        <TextView
+                                android:id="@+id/tvTrip"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="0.00"
+                                android:textSize="28sp"
+                                android:textColor="#FFFFFF"
+                                android:fontFamily="@font/dseg7_classic_bold"
+                                android:gravity="center"/>
+                    </FrameLayout>
 
                     <TextView
                             android:id="@+id/tvTripUnit"

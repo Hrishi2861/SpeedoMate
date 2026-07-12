@@ -5,10 +5,12 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.view.View
+import androidx.core.content.res.ResourcesCompat
 import androidx.interpolator.view.animation.FastOutSlowInInterpolator
 import kotlin.math.cos
 import kotlin.math.sin
 import android.view.animation.OvershootInterpolator
+import com.speedomate.R
 
 class SpeedometerView @JvmOverloads constructor(
     context: Context,
@@ -113,7 +115,15 @@ class SpeedometerView @JvmOverloads constructor(
     private val speedTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#FFFFFF")
         textAlign = Paint.Align.CENTER
-        typeface = Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+        typeface = ResourcesCompat.getFont(context, R.font.dseg7_classic_bold)
+            ?: Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
+    }
+    private val ghostTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
+        color = Color.parseColor("#FFFFFF")
+        textAlign = Paint.Align.CENTER
+        alpha = 30
+        typeface = ResourcesCompat.getFont(context, R.font.dseg7_classic_bold)
+            ?: Typeface.create(Typeface.MONOSPACE, Typeface.BOLD)
     }
     private val unitTextPaint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
         color = Color.parseColor("#00E5FF")
@@ -285,6 +295,14 @@ class SpeedometerView @JvmOverloads constructor(
         }
     }
 
+    private fun buildGhostString(value: String): String {
+        return buildString(value.length) {
+            for (c in value) {
+                append(if (c.isDigit()) '8' else c)
+            }
+        }
+    }
+
     // ── Draw ─────────────────────────────────────────────────────────
     override fun onDraw(canvas: Canvas) {
         super.onDraw(canvas)
@@ -408,10 +426,12 @@ class SpeedometerView @JvmOverloads constructor(
 
         // Digital speed (rolling number)
         speedTextPaint.textSize = radius * 0.32f
-        canvas.drawText(
-            displayedNumber.toInt().toString(),
-            cx, cy + radius * 0.65f, speedTextPaint
-        )
+        ghostTextPaint.textSize = speedTextPaint.textSize
+        val speedStr = displayedNumber.toInt().toString()
+        val ghostStr = buildGhostString(speedStr)
+        val textY = cy + radius * 0.65f
+        canvas.drawText(ghostStr, cx, textY, ghostTextPaint)
+        canvas.drawText(speedStr, cx, textY, speedTextPaint)
 
         // Unit
         unitTextPaint.textSize = radius * 0.11f

@@ -83,18 +83,15 @@ class MainActivity : AppCompatActivity() {
     private val permLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { perms ->
-        when {
-            perms[Manifest.permission.ACCESS_FINE_LOCATION] == true -> {
-                // Permission granted
-                prefs.edit().putBoolean("perm_denied_once", false).apply()
-                vm.startService()
-            }
-            else -> {
-                // Permission denied
-                prefs.edit().putBoolean("perm_denied_once", true).apply()
-                showPermissionDeniedDialog()
-            }
+        val locationGranted = perms[Manifest.permission.ACCESS_FINE_LOCATION] == true
+        if (locationGranted) {
+            prefs.edit().putBoolean("perm_denied_once", false).apply()
+            vm.startService()
+        } else {
+            prefs.edit().putBoolean("perm_denied_once", true).apply()
+            showPermissionDeniedDialog()
         }
+        // ACTIVITY_RECOGNITION is optional/best-effort — denial is silently ignored
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -169,6 +166,12 @@ class MainActivity : AppCompatActivity() {
             // Already granted
             ContextCompat.checkSelfPermission(this, fine) == PackageManager.PERMISSION_GRANTED -> {
                 vm.startService()
+                // Still request ACTIVITY_RECOGNITION if not yet granted (best-effort)
+                val ar = Manifest.permission.ACTIVITY_RECOGNITION
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q &&
+                    ContextCompat.checkSelfPermission(this, ar) != PackageManager.PERMISSION_GRANTED) {
+                    permLauncher.launch(arrayOf(ar))
+                }
             }
 
             // Should show rationale (denied once before)
@@ -184,9 +187,11 @@ class MainActivity : AppCompatActivity() {
                     showGoToSettingsDialog()
                 } else {
                     // First time — just request
-                    permLauncher.launch(
-                        arrayOf(fine, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    )
+                    val perms = mutableListOf(fine, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        perms.add(Manifest.permission.ACTIVITY_RECOGNITION)
+                    }
+                    permLauncher.launch(perms.toTypedArray())
                 }
             }
         }
@@ -202,12 +207,14 @@ class MainActivity : AppCompatActivity() {
             )
             .setCancelable(false)
             .setPositiveButton("Grant Permission") { _, _ ->
-                permLauncher.launch(
-                    arrayOf(
-                        Manifest.permission.ACCESS_FINE_LOCATION,
-                        Manifest.permission.ACCESS_COARSE_LOCATION
-                    )
+                val perms = mutableListOf(
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
                 )
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                    perms.add(Manifest.permission.ACTIVITY_RECOGNITION)
+                }
+                permLauncher.launch(perms.toTypedArray())
             }
             .setNegativeButton("Not Now") { _, _ ->
                 showPermissionDeniedDialog()
@@ -228,9 +235,11 @@ class MainActivity : AppCompatActivity() {
                 // Check if permanently denied
                 val fine = Manifest.permission.ACCESS_FINE_LOCATION
                 if (shouldShowRequestPermissionRationale(fine)) {
-                    permLauncher.launch(
-                        arrayOf(fine, Manifest.permission.ACCESS_COARSE_LOCATION)
-                    )
+                    val perms = mutableListOf(fine, Manifest.permission.ACCESS_COARSE_LOCATION)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                        perms.add(Manifest.permission.ACTIVITY_RECOGNITION)
+                    }
+                    permLauncher.launch(perms.toTypedArray())
                 } else {
                     showGoToSettingsDialog()
                 }
@@ -320,7 +329,9 @@ class MainActivity : AppCompatActivity() {
             vm.maxSpeed.collectLatest { target ->
                 animateFloat(displayedMaxSpeed, target) { value ->
                     displayedMaxSpeed = value
-                    binding.tvMaxSpeed.text = "%.0f".format(value)
+                    val txt = "%.0f".format(value)
+                    binding.tvMaxSpeed.text = txt
+                    binding.tvMaxSpeedGhost.text = ghostFromDigits(txt)
                 }
             }
         }
@@ -328,7 +339,9 @@ class MainActivity : AppCompatActivity() {
             vm.avgSpeed.collectLatest { target ->
                 animateFloat(displayedAvgSpeed, target) { value ->
                     displayedAvgSpeed = value
-                    binding.tvAvgSpeed.text = "%.0f".format(value)
+                    val txt = "%.0f".format(value)
+                    binding.tvAvgSpeed.text = txt
+                    binding.tvAvgSpeedGhost.text = ghostFromDigits(txt)
                 }
             }
         }
@@ -336,7 +349,9 @@ class MainActivity : AppCompatActivity() {
             vm.tripDistance.collectLatest { target ->
                 animateDouble(displayedTripDist, target) { value ->
                     displayedTripDist = value
-                    binding.tvTrip.text = "%.2f".format(value)
+                    val txt = "%.2f".format(value)
+                    binding.tvTrip.text = txt
+                    binding.tvTripGhost.text = ghostFromDigits(txt)
                 }
             }
         }
@@ -384,6 +399,14 @@ class MainActivity : AppCompatActivity() {
             interpolator = AccelerateDecelerateInterpolator()
             addUpdateListener { onUpdate((it.animatedValue as Float).toDouble()) }
             start()
+        }
+    }
+
+    private fun ghostFromDigits(value: String): String {
+        return buildString(value.length) {
+            for (c in value) {
+                append(if (c.isDigit()) '8' else c)
+            }
         }
     }
 

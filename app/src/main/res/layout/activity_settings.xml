@@ -6,7 +6,7 @@
         android:layout_height="match_parent"
         android:background="#0D0D0D">
 
-    <!-- Top gradient accent bar -->
+    <!-- Top gradient accent bar (pinned) -->
     <View
             android:id="@+id/topAccentBar"
             android:layout_width="0dp"
@@ -16,332 +16,543 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Header -->
-    <ImageView
-            android:id="@+id/ivSettingsIcon"
-            android:layout_width="32dp"
-            android:layout_height="32dp"
-            android:src="@drawable/ic_settings"
-            android:tint="#00E5FF"
-            android:alpha="0.8"
+    <!-- Scrollable content -->
+    <androidx.core.widget.NestedScrollView
+            android:id="@+id/scrollView"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:fillViewport="true"
+            android:scrollbars="vertical"
+            android:fadeScrollbars="true"
             app:layout_constraintTop_toBottomOf="@id/topAccentBar"
-            app:layout_constraintStart_toStartOf="parent"
-            android:layout_marginTop="28dp"
-            android:layout_marginStart="24dp"/>
-
-    <TextView
-            android:id="@+id/tvSettingsTitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Settings"
-            android:textSize="28sp"
-            android:textColor="#FFFFFF"
-            android:letterSpacing="0.02"
-            app:layout_constraintTop_toTopOf="@id/ivSettingsIcon"
-            app:layout_constraintBottom_toBottomOf="@id/ivSettingsIcon"
-            app:layout_constraintStart_toEndOf="@id/ivSettingsIcon"
-            android:layout_marginStart="12dp"/>
-
-    <TextView
-            android:id="@+id/tvSettingsSubtitle"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Customize your SpeedoMate experience"
-            android:textSize="13sp"
-            android:textColor="#555555"
-            app:layout_constraintTop_toBottomOf="@id/tvSettingsTitle"
-            app:layout_constraintStart_toStartOf="@id/tvSettingsTitle"
-            android:layout_marginTop="4dp"/>
-
-    <!-- Divider -->
-    <View
-            android:id="@+id/headerDivider"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:background="#1A1A1A"
-            app:layout_constraintTop_toBottomOf="@id/tvSettingsSubtitle"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent"
-            android:layout_marginTop="24dp"/>
-
-    <!-- Speed Unit Card -->
-    <androidx.cardview.widget.CardView
-            android:id="@+id/cardUnit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="28dp"
-            app:cardBackgroundColor="@android:color/transparent"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/headerDivider"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="horizontal"
-                android:background="@drawable/settings_card_bg"
-                android:padding="20dp"
-                android:gravity="center_vertical">
-
-            <ImageView
-                    android:layout_width="24dp"
-                    android:layout_height="24dp"
-                    android:src="@drawable/ic_speed_unit"
-                    android:layout_marginEnd="16dp"
-                    android:alpha="0.9"/>
-
-            <LinearLayout
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:orientation="vertical">
-
-                <TextView
-                        android:id="@+id/tvUnitLabel"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Speed Unit"
-                        android:textSize="16sp"
-                        android:textColor="#E0E0E0"
-                        android:letterSpacing="0.02"/>
-
-                <TextView
-                        android:id="@+id/tvUnitHint"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Switch between km/h and mph"
-                        android:textSize="12sp"
-                        android:textColor="#555555"
-                        android:layout_marginTop="4dp"/>
-            </LinearLayout>
-
-            <com.google.android.material.switchmaterial.SwitchMaterial
-                    android:id="@+id/toggleUnit"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="km/h"
-                    android:textColor="#00E5FF"
-                    android:textSize="13sp"
-                    android:textStyle="bold"
-                    android:letterSpacing="0.05"/>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
-
-    <!-- Speed Limit Card -->
-    <androidx.cardview.widget.CardView
-            android:id="@+id/cardSpeedLimit"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@android:color/transparent"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/cardUnit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
+            app:layout_constraintBottom_toBottomOf="parent">
 
         <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:background="@drawable/settings_card_bg"
-                android:padding="20dp">
+                android:paddingBottom="24dp">
 
+            <!-- Header -->
             <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
                     android:orientation="horizontal"
-                    android:gravity="center_vertical">
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="28dp"
+                    android:layout_marginStart="24dp">
 
                 <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_alert"
-                        android:layout_marginEnd="16dp"/>
+                        android:id="@+id/ivSettingsIcon"
+                        android:layout_width="32dp"
+                        android:layout_height="32dp"
+                        android:src="@drawable/ic_settings"
+                        android:tint="#00E5FF"
+                        android:alpha="0.8"/>
 
-                <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                    <TextView
-                            android:id="@+id/tvSpeedLimitLabel"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Speed Limit Alert"
-                            android:textSize="16sp"
-                            android:textColor="#E0E0E0"
-                            android:letterSpacing="0.02"/>
-
-                    <TextView
-                            android:id="@+id/tvSpeedLimitHint"
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Get notified when you exceed the limit"
-                            android:textSize="12sp"
-                            android:textColor="#555555"
-                            android:layout_marginTop="4dp"/>
-                </LinearLayout>
-
-                <!-- Value badge -->
                 <TextView
-                        android:id="@+id/tvSpeedLimitValue"
+                        android:id="@+id/tvSettingsTitle"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:text="Off"
-                        android:textSize="14sp"
-                        android:textColor="#0D0D0D"
-                        android:fontFamily="monospace"
-                        android:textStyle="bold"
-                        android:background="@drawable/limit_badge_bg"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"
-                        android:paddingTop="6dp"
-                        android:paddingBottom="6dp"
-                        android:minWidth="48dp"
-                        android:gravity="center"/>
+                        android:text="Settings"
+                        android:textSize="28sp"
+                        android:textColor="#FFFFFF"
+                        android:letterSpacing="0.02"
+                        android:layout_marginStart="12dp"/>
             </LinearLayout>
 
-            <!-- Seekbar with min/max labels -->
-            <LinearLayout
+            <TextView
+                    android:id="@+id/tvSettingsSubtitle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="Customize your SpeedoMate experience"
+                    android:textSize="13sp"
+                    android:textColor="#555555"
+                    android:layout_marginStart="24dp"
+                    android:layout_marginTop="4dp"/>
+
+            <!-- Divider -->
+            <View
+                    android:id="@+id/headerDivider"
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="#1A1A1A"
+                    android:layout_marginTop="24dp"/>
+
+            <!-- Speed Unit Card -->
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/cardUnit"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="20dp">
-
-                <SeekBar
-                        android:id="@+id/seekSpeedLimit"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:max="180"
-                        android:progressDrawable="@drawable/seekbar_speed_limit"
-                        android:thumb="@drawable/seekbar_thumb"
-                        android:splitTrack="false"
-                        android:paddingStart="12dp"
-                        android:paddingEnd="12dp"/>
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="28dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
 
                 <LinearLayout
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
                         android:orientation="horizontal"
-                        android:layout_marginTop="4dp">
+                        android:background="@drawable/settings_card_bg"
+                        android:padding="20dp"
+                        android:gravity="center_vertical">
 
-                    <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="0"
-                            android:textSize="11sp"
-                            android:textColor="#444444"
-                            android:fontFamily="monospace"/>
+                    <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_speed_unit"
+                            android:layout_marginEnd="16dp"
+                            android:alpha="0.9"/>
 
-                    <TextView
-                            android:id="@+id/tvMaxSeekValue"
+                    <LinearLayout
                             android:layout_width="0dp"
                             android:layout_height="wrap_content"
                             android:layout_weight="1"
-                            android:text="180"
-                            android:textSize="11sp"
-                            android:textColor="#444444"
-                            android:fontFamily="monospace"
-                            android:gravity="end"/>
+                            android:orientation="vertical">
+
+                        <TextView
+                                android:id="@+id/tvUnitLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Speed Unit"
+                                android:textSize="16sp"
+                                android:textColor="#E0E0E0"
+                                android:letterSpacing="0.02"/>
+
+                        <TextView
+                                android:id="@+id/tvUnitHint"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Switch between km/h and mph"
+                                android:textSize="12sp"
+                                android:textColor="#555555"
+                                android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/toggleUnit"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"
+                            android:text="km/h"
+                            android:textColor="#00E5FF"
+                            android:textSize="13sp"
+                            android:textStyle="bold"
+                            android:letterSpacing="0.05"/>
                 </LinearLayout>
-            </LinearLayout>
-        </LinearLayout>
-    </androidx.cardview.widget.CardView>
+            </androidx.cardview.widget.CardView>
 
-    <!-- Theme Color Card -->
-    <androidx.cardview.widget.CardView
-            android:id="@+id/cardTheme"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginStart="20dp"
-            android:layout_marginEnd="20dp"
-            android:layout_marginTop="16dp"
-            app:cardBackgroundColor="@android:color/transparent"
-            app:cardCornerRadius="16dp"
-            app:cardElevation="0dp"
-            app:layout_constraintTop_toBottomOf="@id/cardSpeedLimit"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintEnd_toEndOf="parent">
-
-        <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="@drawable/settings_card_bg"
-                android:padding="20dp">
-
-            <LinearLayout
+            <!-- Speed Limit Card -->
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/cardSpeedLimit"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:orientation="horizontal"
-                    android:gravity="center_vertical">
-
-                <ImageView
-                        android:layout_width="24dp"
-                        android:layout_height="24dp"
-                        android:src="@drawable/ic_palette"
-                        android:layout_marginEnd="16dp"/>
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
 
                 <LinearLayout
-                        android:layout_width="0dp"
-                        android:layout_height="wrap_content"
-                        android:layout_weight="1"
-                        android:orientation="vertical">
-
-                    <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="App Theme"
-                            android:textSize="16sp"
-                            android:textColor="#E0E0E0"
-                            android:letterSpacing="0.02"/>
-
-                    <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Pick your accent color"
-                            android:textSize="12sp"
-                            android:textColor="#555555"
-                            android:layout_marginTop="4dp"/>
-                </LinearLayout>
-            </LinearLayout>
-
-            <!-- Color swatches grid -->
-            <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical"
-                    android:layout_marginTop="20dp">
-                <HorizontalScrollView
-                        android:id="@+id/swatchScrollView"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
-                        android:scrollbars="none"
-                        android:overScrollMode="never"
-                        android:fadingEdge="none">
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_card_bg"
+                        android:padding="20dp">
+
                     <LinearLayout
-                            android:id="@+id/swatchContainer"
-                            android:layout_width="wrap_content"
+                            android:layout_width="match_parent"
                             android:layout_height="wrap_content"
                             android:orientation="horizontal"
-                            android:gravity="top"/>
-                </HorizontalScrollView>
-                <View
-                        android:id="@+id/customScrollbar"
+                            android:gravity="center_vertical">
+
+                        <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_alert"
+                                android:layout_marginEnd="16dp"/>
+
+                        <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                            <TextView
+                                    android:id="@+id/tvSpeedLimitLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Speed Limit Alert"
+                                    android:textSize="16sp"
+                                    android:textColor="#E0E0E0"
+                                    android:letterSpacing="0.02"/>
+
+                            <TextView
+                                    android:id="@+id/tvSpeedLimitHint"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Get notified when you exceed the limit"
+                                    android:textSize="12sp"
+                                    android:textColor="#555555"
+                                    android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <!-- Value badge -->
+                        <TextView
+                                android:id="@+id/tvSpeedLimitValue"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Off"
+                                android:textSize="14sp"
+                                android:textColor="#0D0D0D"
+                                android:fontFamily="monospace"
+                                android:textStyle="bold"
+                                android:background="@drawable/limit_badge_bg"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"
+                                android:paddingTop="6dp"
+                                android:paddingBottom="6dp"
+                                android:minWidth="48dp"
+                                android:gravity="center"/>
+                    </LinearLayout>
+
+                    <!-- Seekbar with min/max labels -->
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="20dp">
+
+                        <SeekBar
+                                android:id="@+id/seekSpeedLimit"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:max="180"
+                                android:progressDrawable="@drawable/seekbar_speed_limit"
+                                android:thumb="@drawable/seekbar_thumb"
+                                android:splitTrack="false"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"/>
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="4dp">
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="0"
+                                    android:textSize="11sp"
+                                    android:textColor="#444444"
+                                    android:fontFamily="monospace"/>
+
+                            <TextView
+                                    android:id="@+id/tvMaxSeekValue"
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="180"
+                                    android:textSize="11sp"
+                                    android:textColor="#444444"
+                                    android:fontFamily="monospace"
+                                    android:gravity="end"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Auto-Save Card -->
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/cardAutoSave"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                <LinearLayout
                         android:layout_width="match_parent"
-                        android:layout_height="4dp"
-                        android:layout_marginTop="32dp"
-                        android:background="@android:color/transparent"/>
-            </LinearLayout>
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_card_bg"
+                        android:padding="20dp">
+
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                        <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_save"
+                                android:layout_marginEnd="16dp"/>
+
+                        <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                            <TextView
+                                    android:id="@+id/tvAutoSaveLabel"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Auto-Save Trip"
+                                    android:textSize="16sp"
+                                    android:textColor="#E0E0E0"
+                                    android:letterSpacing="0.02"/>
+
+                            <TextView
+                                    android:id="@+id/tvAutoSaveHint"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Save trip automatically when idle"
+                                    android:textSize="12sp"
+                                    android:textColor="#555555"
+                                    android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+
+                        <com.google.android.material.switchmaterial.SwitchMaterial
+                                android:id="@+id/toggleAutoSave"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"/>
+                    </LinearLayout>
+
+                    <!-- Idle minutes SeekBar section -->
+                    <LinearLayout
+                            android:id="@+id/idleMinutesSection"
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="20dp"
+                            android:visibility="gone">
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:gravity="center_vertical">
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Idle before save"
+                                    android:textSize="13sp"
+                                    android:textColor="#888888"
+                                    android:layout_marginEnd="12dp"/>
+
+                            <TextView
+                                    android:id="@+id/tvIdleMinutesValue"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="15 min"
+                                    android:textSize="14sp"
+                                    android:textColor="#0D0D0D"
+                                    android:fontFamily="monospace"
+                                    android:textStyle="bold"
+                                    android:background="@drawable/limit_badge_bg"
+                                    android:paddingStart="12dp"
+                                    android:paddingEnd="12dp"
+                                    android:paddingTop="6dp"
+                                    android:paddingBottom="6dp"
+                                    android:minWidth="48dp"
+                                    android:gravity="center"/>
+                        </LinearLayout>
+
+                        <SeekBar
+                                android:id="@+id/seekIdleMinutes"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:layout_marginTop="12dp"
+                                android:max="11"
+                                android:progressDrawable="@drawable/seekbar_speed_limit"
+                                android:thumb="@drawable/seekbar_thumb"
+                                android:splitTrack="false"
+                                android:paddingStart="12dp"
+                                android:paddingEnd="12dp"/>
+
+                        <LinearLayout
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:orientation="horizontal"
+                                android:layout_marginTop="4dp">
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="5 min"
+                                    android:textSize="11sp"
+                                    android:textColor="#444444"
+                                    android:fontFamily="monospace"/>
+
+                            <TextView
+                                    android:layout_width="0dp"
+                                    android:layout_height="wrap_content"
+                                    android:layout_weight="1"
+                                    android:text="60 min"
+                                    android:textSize="11sp"
+                                    android:textColor="#444444"
+                                    android:fontFamily="monospace"
+                                    android:gravity="end"/>
+                        </LinearLayout>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Android Auto Card -->
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/cardAndroidAuto"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="horizontal"
+                        android:background="@drawable/settings_card_bg"
+                        android:padding="20dp"
+                        android:gravity="center_vertical">
+
+                    <ImageView
+                            android:layout_width="24dp"
+                            android:layout_height="24dp"
+                            android:src="@drawable/ic_speed_unit"
+                            android:layout_marginEnd="16dp"
+                            android:alpha="0.9"/>
+
+                    <LinearLayout
+                            android:layout_width="0dp"
+                            android:layout_height="wrap_content"
+                            android:layout_weight="1"
+                            android:orientation="vertical">
+
+                        <TextView
+                                android:id="@+id/tvAndroidAutoLabel"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Android Auto Auto-Start"
+                                android:textSize="16sp"
+                                android:textColor="#E0E0E0"
+                                android:letterSpacing="0.02"/>
+
+                        <TextView
+                                android:id="@+id/tvAndroidAutoHint"
+                                android:layout_width="wrap_content"
+                                android:layout_height="wrap_content"
+                                android:text="Auto-start tracking when AA connects"
+                                android:textSize="12sp"
+                                android:textColor="#555555"
+                                android:layout_marginTop="4dp"/>
+                    </LinearLayout>
+
+                    <com.google.android.material.switchmaterial.SwitchMaterial
+                            android:id="@+id/toggleAndroidAuto"
+                            android:layout_width="wrap_content"
+                            android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
+            <!-- Theme Color Card -->
+            <androidx.cardview.widget.CardView
+                    android:id="@+id/cardTheme"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginEnd="20dp"
+                    android:layout_marginTop="16dp"
+                    app:cardBackgroundColor="@android:color/transparent"
+                    app:cardCornerRadius="16dp"
+                    app:cardElevation="0dp">
+
+                <LinearLayout
+                        android:layout_width="match_parent"
+                        android:layout_height="wrap_content"
+                        android:orientation="vertical"
+                        android:background="@drawable/settings_card_bg"
+                        android:padding="20dp">
+
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="horizontal"
+                            android:gravity="center_vertical">
+
+                        <ImageView
+                                android:layout_width="24dp"
+                                android:layout_height="24dp"
+                                android:src="@drawable/ic_palette"
+                                android:layout_marginEnd="16dp"/>
+
+                        <LinearLayout
+                                android:layout_width="0dp"
+                                android:layout_height="wrap_content"
+                                android:layout_weight="1"
+                                android:orientation="vertical">
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="App Theme"
+                                    android:textSize="16sp"
+                                    android:textColor="#E0E0E0"
+                                    android:letterSpacing="0.02"/>
+
+                            <TextView
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:text="Pick your accent color"
+                                    android:textSize="12sp"
+                                    android:textColor="#555555"
+                                    android:layout_marginTop="4dp"/>
+                        </LinearLayout>
+                    </LinearLayout>
+
+                    <!-- Color swatches grid -->
+                    <LinearLayout
+                            android:layout_width="match_parent"
+                            android:layout_height="wrap_content"
+                            android:orientation="vertical"
+                            android:layout_marginTop="20dp">
+                        <HorizontalScrollView
+                                android:id="@+id/swatchScrollView"
+                                android:layout_width="match_parent"
+                                android:layout_height="wrap_content"
+                                android:scrollbars="none"
+                                android:overScrollMode="never"
+                                android:fadingEdge="none">
+                            <LinearLayout
+                                    android:id="@+id/swatchContainer"
+                                    android:layout_width="wrap_content"
+                                    android:layout_height="wrap_content"
+                                    android:orientation="horizontal"
+                                    android:gravity="top"/>
+                        </HorizontalScrollView>
+                        <View
+                                android:id="@+id/customScrollbar"
+                                android:layout_width="match_parent"
+                                android:layout_height="4dp"
+                                android:layout_marginTop="32dp"
+                                android:background="@android:color/transparent"/>
+                    </LinearLayout>
+                </LinearLayout>
+            </androidx.cardview.widget.CardView>
+
         </LinearLayout>
-    </androidx.cardview.widget.CardView>
+    </androidx.core.widget.NestedScrollView>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

@@ -66,6 +66,15 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
     val allTrips: Flow<List<TripEntity>> = database.tripDao().getAllTrips()
 
+    val autoSaveEnabled: StateFlow<Boolean> = prefs.autoSaveEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
+    val autoSaveIdleMinutes: StateFlow<Int> = prefs.autoSaveIdleMinutes
+        .stateIn(viewModelScope, SharingStarted.Eagerly, 15)
+
+    val autoStartAndroidAuto: StateFlow<Boolean> = prefs.autoStartAndroidAuto
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
+
     private fun bearingToCardinal(bearing: Float): String {
         return when (bearing) {
             in 337.5f..360f, in 0f..22.5f -> "N"
@@ -107,5 +116,17 @@ class SpeedViewModel(app: Application) : AndroidViewModel(app) {
 
     fun setAccentColor(value: String) {
         viewModelScope.launch { prefs.setAccentColor(value) }
+    }
+
+    fun setAutoSaveEnabled(value: Boolean) {
+        viewModelScope.launch { prefs.setAutoSaveEnabled(value) }
+    }
+
+    fun setAutoSaveIdleMinutes(value: Int) {
+        viewModelScope.launch { prefs.setAutoSaveIdleMinutes(value) }
+    }
+
+    fun setAutoStartAndroidAuto(value: Boolean) {
+        viewModelScope.launch { prefs.setAutoStartAndroidAuto(value) }
     }
 }
